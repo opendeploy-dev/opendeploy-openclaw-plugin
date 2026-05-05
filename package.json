@@ -1,5 +1,5 @@
 {
-  "name": "@opendeploy-dev/opendeploy",
+  "name": "opendeploy",
   "version": "0.0.1",
   "description": "OpenDeploy skills packaged as a native OpenClaw plugin for ClawHub.",
   "type": "module",

@@ -27,7 +27,7 @@ The split is intentional: **agents deploy, humans observe**. The agent registers
 After the package is published:
 
 ```sh
-openclaw plugins install clawhub:opendeploy-dev/opendeploy
+openclaw plugins install clawhub:opendeploy
 openclaw gateway restart
 ```
 
@@ -83,7 +83,7 @@ repository secrets.
 For local publish testing with a current ClawHub CLI:
 
 ```sh
-clawhub package publish . --family bundle-plugin --owner opendeploy-dev --dry-run
+clawhub package publish . --family bundle-plugin --owner opendeploy --dry-run
 ```
 
 ## License
