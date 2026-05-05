@@ -1,7 +1,9 @@
 ---
 name: opendeploy-api
-description: Safe OpenDeploy API escape hatch for advanced agents when the CLI lacks a route. Use only when the user says raw API, OpenDeploy API, CLI lacks route, missing CLI command, advanced API, API escape hatch, GET route, POST route, PUT route, PATCH route, or a needed OpenDeploy operation is not exposed by the CLI. DELETE remains blocked.
-user-invokable: true
+version: "0.0.1"
+description: "Safe OpenDeploy API escape hatch for advanced agents when the CLI lacks a route. Use only when the user says raw API, OpenDeploy API, CLI lacks route, missing CLI command, advanced API, API escape hatch, GET route, POST route, PUT route, PATCH route, or a needed OpenDeploy operation is not exposed by the CLI. DELETE remains blocked."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy API Escape Hatch

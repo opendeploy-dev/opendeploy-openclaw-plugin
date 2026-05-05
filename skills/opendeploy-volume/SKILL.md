@@ -1,7 +1,9 @@
 ---
 name: opendeploy-volume
-description: Manage persistent volumes on OpenDeploy services — add, list, resize (expand only), detach, restore, or hard-delete an orphaned volume. Use when the user says add volume, attach storage, persistent disk, persist data, mount a volume, resize disk, expand storage, detach volume, restore deleted volume, undelete volume, or "volume X is detached/orphaned/deletes in N days". Read this before mutating any volume — the first volume on an existing service triggers a destructive workload conversion with brief downtime, and the agent MUST surface that before applying.
-user-invokable: true
+version: "0.0.1"
+description: "Manage persistent volumes on OpenDeploy services — add, list, resize (expand only), detach, restore, or hard-delete an orphaned volume. Use when the user says add volume, attach storage, persistent disk, persist data, mount a volume, resize disk, expand storage, detach volume, restore deleted volume, undelete volume, or \"volume X is detached/orphaned/deletes in N days\". Read this before mutating any volume — the first volume on an existing service triggers a destructive workload conversion with brief downtime, and the agent MUST surface that before applying."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Volume

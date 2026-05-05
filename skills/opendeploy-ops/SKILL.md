@@ -1,14 +1,9 @@
 ---
 name: opendeploy-ops
 version: "0.0.1"
-description: Inspect, monitor, alert on, and operate live OpenDeploy services. Use for read-only health/metrics/quota/circuit-breaker checks, alarm inspection, restart, stop, start, rollback, resize, cancel deployment, retry deployment, and other live-service operations. Use opendeploy-alarms for alarm lifecycle, notes, alarm-backed support engagement, and incident updates; use opendeploy-oncall for direct private Discord support channel handoff when no alarm exists. Read-only by default; mutations require explicit consent.
-allowed-tools:
-  - AskUserQuestion
-  - Read
-  - Bash(npm:*)
-  - Bash(opendeploy:*)
-  - Bash(jq:*)
-user-invokable: true
+description: "Inspect, monitor, alert on, and operate live OpenDeploy services. Use for read-only health/metrics/quota/circuit-breaker checks, alarm inspection, restart, stop, start, rollback, resize, cancel deployment, retry deployment, and other live-service operations. Use opendeploy-alarms for alarm lifecycle, notes, alarm-backed support engagement, and incident updates; use opendeploy-oncall for direct private Discord support channel handoff when no alarm exists. Read-only by default; mutations require explicit consent."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Ops

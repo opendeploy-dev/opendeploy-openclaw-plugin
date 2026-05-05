@@ -1,14 +1,9 @@
 ---
 name: opendeploy-alarms
 version: "0.0.1"
-description: Manage OpenDeploy alarm lifecycle from an agent. Use for active alarms, alert history, alarm notes, acknowledging, resolving, suppressing, alarm-backed legacy support engagement, and human-visible dashboard updates. Use opendeploy-oncall for Discord oncall setup, direct support channel handoff when no alarm exists, and per-alarm conversation with OpenDeploy responders.
-allowed-tools:
-  - AskUserQuestion
-  - Read
-  - Bash(npm:*)
-  - Bash(opendeploy:*)
-  - Bash(jq:*)
-user-invokable: true
+description: "Manage OpenDeploy alarm lifecycle from an agent. Use for active alarms, alert history, alarm notes, acknowledging, resolving, suppressing, alarm-backed legacy support engagement, and human-visible dashboard updates. Use opendeploy-oncall for Discord oncall setup, direct support channel handoff when no alarm exists, and per-alarm conversation with OpenDeploy responders."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Alarms

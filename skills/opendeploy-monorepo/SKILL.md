@@ -1,7 +1,9 @@
 ---
 name: opendeploy-monorepo
-description: Plan OpenDeploy service splits for monorepos, workspaces, docker-compose apps, web+worker apps, cron jobs, and multi-service projects. Use when the user says monorepo, workspace, pnpm workspace, turborepo, nx, multiple apps, multiple services, worker, queue, cron, docker-compose, compose, Procfile, web/API split, root directory, app directory, service split, or when OpenDeploy analysis detects more than one candidate service.
-user-invokable: true
+version: "0.0.1"
+description: "Plan OpenDeploy service splits for monorepos, workspaces, docker-compose apps, web+worker apps, cron jobs, and multi-service projects. Use when the user says monorepo, workspace, pnpm workspace, turborepo, nx, multiple apps, multiple services, worker, queue, cron, docker-compose, compose, Procfile, web/API split, root directory, app directory, service split, or when OpenDeploy analysis detects more than one candidate service."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Monorepo / Multi-Service

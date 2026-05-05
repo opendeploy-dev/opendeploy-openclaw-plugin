@@ -1,47 +1,9 @@
 ---
 name: opendeploy
 version: "0.0.1"
-description: One-click OpenDeploy autoplan skill for deploying projects from coding agents through the official versioned npm CLI (@opendeploydev/cli). Use when the user says deploy this, host this, publish this, ship this, launch this, make it live, preview this, redeploy, get a live URL, put this online, rotate env vars, add managed Postgres/MySQL/MongoDB/Redis, attach a persistent volume, persist data, mount persistent disk, persist uploads, persist SQLite, persist file-based queues, rename an OpenDeploy subdomain, bind a custom domain, debug a failed OpenDeploy deployment, check logs, check health, manage alarms, or get help from OpenDeploy staff through the user's private Discord support channel when a deploy fails or the user has an OpenDeploy issue. This is the canonical OpenDeploy entrypoint; /deploy is only an alias. The first deploy can run without a pre-existing account after explicit local deploy credential consent; the agent returns the live URL and, after the deployment is active, an account-binding link. Guest-tier caps apply only before account binding — see "Limits" below.
-homepage: "https://opendeploy.dev"
-author: "OpenDeploy <security@opendeploy.dev>"
-repository: "https://github.com/opendeploy-dev/opendeploy-skills"
-license: "MIT"
-required_binaries: [node, npm]
-conditional_binaries: [git, zip, unzip]
-required_env_vars: []
-optional_env_vars: [OPENDEPLOY_TOKEN, OPENDEPLOY_AUTH_FILE, OPENDEPLOY_BASE_URL, GIT_URL, GIT_BRANCH, GIT_TOKEN, SUBDOMAIN]
-allowed-tools:
-  - AskUserQuestion
-  - Read
-  - Write
-  - Edit
-  - Bash(npm:*)
-  - Bash(opendeploy:*)
-  - Bash(jq:*)
-  - Bash(test:*)
-  - Bash(ls:*)
-  - Bash(pwd)
-  - Bash(git status:*)
-  - Bash(git log:*)
-network_destinations:
-  - "https://registry.npmjs.org"
-  - "https://raw.githubusercontent.com/opendeploy-dev/opendeploy-skills/main/.claude-plugin/plugin.json"
-  - "https://dashboard.opendeploy.dev/api"
-persistent_files:
-  - ~/.opendeploy/auth.json
-  - ~/.opendeploy/config.json
-  - ~/.opendeploy/lib/log.sh
-  - ~/.opendeploy/logs/<UTC-date>.log
-sensitive_inputs:
-  - real .env values may be submitted to the OpenDeploy API as service env configuration after explicit key-only consent
-  - GIT_TOKEN is sent only to the OpenDeploy gateway for private repository access
-metadata:
-  version: "0.0.1"
-  category: deploy
-  api_base: "https://dashboard.opendeploy.dev/api"
-  cli_package: "@opendeploydev/cli"
-  security_contact: "security@opendeploy.dev"
-user-invokable: true
+description: "One-click OpenDeploy autoplan skill for deploying projects from coding agents through the official versioned npm CLI (@opendeploydev/cli). Use when the user says deploy this, host this, publish this, ship this, launch this, make it live, preview this, redeploy, get a live URL, put this online, rotate env vars, add managed Postgres/MySQL/MongoDB/Redis, attach a persistent volume, persist data, mount persistent disk, persist uploads, persist SQLite, persist file-based queues, rename an OpenDeploy subdomain, bind a custom domain, debug a failed OpenDeploy deployment, check logs, check health, manage alarms, or get help from OpenDeploy staff through the user's private Discord support channel when a deploy fails or the user has an OpenDeploy issue. This is the canonical OpenDeploy entrypoint; /deploy is only an alias. The first deploy can run without a pre-existing account after explicit local deploy credential consent; the agent returns the live URL and, after the deployment is active, an account-binding link. Guest-tier caps apply only before account binding — see \"Limits\" below."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Autoplan

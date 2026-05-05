@@ -8,32 +8,17 @@ on:
 
 jobs:
   validate:
-    name: validate manifests
+    name: validate OpenClaw package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate SKILL.md frontmatter
-        run: |
-          set -e
-          python3 -m json.tool openclaw.plugin.json >/dev/null
-          fail=0
-          while IFS= read -r f; do
-            echo "Checking $f"
-            python3 - <<PY
-import sys, re
-content = open("$f").read()
-m = re.match(r'^---\n(.*?)\n---\n', content, re.DOTALL)
-if not m:
-    print("::error file=$f::Missing YAML frontmatter")
-    sys.exit(1)
-front = m.group(1)
-if 'name:' not in front:
-    print("::error file=$f::Missing required 'name' field")
-    sys.exit(1)
-if 'description:' not in front:
-    print("::error file=$f::Missing required 'description' field")
-    sys.exit(1)
-print("OK")
-PY
-          done < <(find skills -name 'SKILL.md' -type f)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate OpenClaw manifest and skill metadata
+        run: npm run validate
+
+      - name: Check package contents
+        run: npm run pack:dry-run

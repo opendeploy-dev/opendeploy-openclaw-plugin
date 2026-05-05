@@ -1,0 +1,51 @@
+{
+  "name": "opendeploy",
+  "version": "0.0.1",
+  "description": "OpenDeploy skills packaged as a native OpenClaw plugin for ClawHub.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://opendeploy.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opendeploy-dev/opendeploy-openclaw-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/opendeploy-dev/opendeploy-openclaw-plugin/issues"
+  },
+  "keywords": [
+    "openclaw",
+    "clawhub",
+    "opendeploy",
+    "deploy",
+    "deployment",
+    "skills",
+    "agent",
+    "postgres",
+    "mysql",
+    "redis",
+    "mongodb"
+  ],
+  "files": [
+    "openclaw.plugin.json",
+    "skills/",
+    "hooks/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "validate": "node tools/validate-openclaw-plugin.mjs",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "openclaw": {
+    "compat": {
+      "pluginApi": ">=2026.3.24"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24"
+    },
+    "install": {
+      "minHostVersion": ">=2026.3.24"
+    }
+  }
+}

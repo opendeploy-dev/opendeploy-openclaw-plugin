@@ -1,35 +1,9 @@
 ---
 name: opendeploy-oncall
 version: "0.0.1"
-description: |
-  Get help from OpenDeploy staff through the user's private Discord support
-  channel when a deploy fails, OpenDeploy has a platform/upload/CLI issue, or
-  the user asks to contact OpenDeploy support. This is not agent auto-oncall:
-  the agent continues investigating locally, while this skill gets or sets up
-  the Discord link so the user can reach the OpenDeploy team. It also supports
-  alarm-backed posts when a real alarm ID exists.
-
-  TRIGGER when: a deploy/build/upload/platform operation failed and the user
-  wants help from OpenDeploy; user says engage/contact/page OpenDeploy support,
-  get help from us, Discord, private support channel, or "loop in the
-  OpenDeploy team"; user pastes the prompt from the dashboard's "Set up
-  oncall" popup; or an alarm has fired and the user explicitly wants the
-  OpenDeploy team kept in the loop.
-
-  SKIP: routine deploy/restart/rollback (use opendeploy, opendeploy-ops,
-  opendeploy-debug, etc.); alarm acknowledgment without conversation
-  (use opendeploy-alarms); if ONCALL_FEATURE_ENABLED=false on the user's
-  instance.
-dependencies:
-  - opendeploy-cli >= 0.1.14
-  - opendeploy backend with /api/v1/oncall/* and /api/v1/alarms/*/oncall-* routes deployed
-allowed-tools:
-  - AskUserQuestion
-  - Read
-  - Bash(npm:*)
-  - Bash(opendeploy:*)
-  - Bash(jq:*)
-user-invokable: true
+description: "Get help from OpenDeploy staff through the user's private Discord support channel when a deploy fails, OpenDeploy has a platform/upload/CLI issue, or the user asks to contact OpenDeploy support. This is not agent auto-oncall: the agent continues investigating locally, while this skill gets or sets up the Discord link so the user can reach the OpenDeploy team. It also supports alarm-backed posts when a real alarm ID exists. TRIGGER when: a deploy/build/upload/platform operation failed and the user wants help from OpenDeploy; user says engage/contact/page OpenDeploy support, get help from us, Discord, private support channel, or \"loop in the OpenDeploy team\"; user pastes the prompt from the dashboard's \"Set up oncall\" popup; or an alarm has fired and the user explicitly wants the OpenDeploy team kept in the loop. SKIP: routine deploy/restart/rollback (use opendeploy, opendeploy-ops, opendeploy-debug, etc.); alarm acknowledgment without conversation (use opendeploy-alarms); if ONCALL_FEATURE_ENABLED=false on the user's instance."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Oncall

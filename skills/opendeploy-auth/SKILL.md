@@ -1,7 +1,9 @@
 ---
 name: opendeploy-auth
-description: Manage OpenDeploy authentication. Use when the user says login, log in, sign in, auth, auth status, whoami, token, OpenDeploy token, dashboard token, local deploy credential, guest credential, anonymous credential, bind account, account binding link, credential rejected, 401, or asks to inspect credential binding state.
-user-invokable: true
+version: "0.0.1"
+description: "Manage OpenDeploy authentication. Use when the user says login, log in, sign in, auth, auth status, whoami, token, OpenDeploy token, dashboard token, local deploy credential, guest credential, anonymous credential, bind account, account binding link, credential rejected, 401, or asks to inspect credential binding state."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Auth

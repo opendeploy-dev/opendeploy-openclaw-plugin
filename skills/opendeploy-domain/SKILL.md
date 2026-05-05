@@ -1,7 +1,9 @@
 ---
 name: opendeploy-domain
-description: Manage OpenDeploy auto subdomains, custom domains, DNS checks, CNAME setup, and domain verification. Use when the user says domain, custom domain, hostname, custom hostname, subdomain, rename subdomain, URL, DNS, CNAME, SSL, TLS, primary domain, verify domain, bind domain, check DNS, or make a custom hostname live.
-user-invokable: true
+version: "0.0.1"
+description: "Manage OpenDeploy auto subdomains, custom domains, DNS checks, CNAME setup, and domain verification. Use when the user says domain, custom domain, hostname, custom hostname, subdomain, rename subdomain, URL, DNS, CNAME, SSL, TLS, primary domain, verify domain, bind domain, check DNS, or make a custom hostname live."
+user-invocable: true
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Domain

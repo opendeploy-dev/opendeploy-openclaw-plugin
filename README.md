@@ -2,7 +2,8 @@
 
 # OpenDeploy OpenClaw Plugin
 
-OpenClaw plugin for [OpenDeploy](https://opendeploy.dev) — agent-first deployment.
+OpenClaw plugin for [OpenDeploy](https://opendeploy.dev) — agent-first
+deployment, packaged for ClawHub.
 
 ## What's OpenDeploy?
 
@@ -21,16 +22,16 @@ The split is intentional: **agents deploy, humans observe**. The agent registers
 
 ---
 
-## Install
+## Install From ClawHub
 
-From ClawHub:
+After the package is published:
 
 ```sh
 openclaw plugins install clawhub:opendeploy-dev/opendeploy
 openclaw gateway restart
 ```
 
-From a local checkout:
+## Install From A Local Checkout
 
 ```sh
 git clone --single-branch --depth 1 https://github.com/opendeploy-dev/opendeploy-openclaw-plugin.git
@@ -49,6 +50,41 @@ Deploy this project with OpenDeploy.
 
 OpenClaw loads the skills declared in `openclaw.plugin.json`. The canonical
 entrypoint is `opendeploy`; `deploy` is a short alias.
+
+## ClawHub Package Shape
+
+This repository follows ClawHub's package conventions:
+
+- `package.json` carries the package name/version plus `openclaw.compat.pluginApi`
+  and `openclaw.build.openclawVersion`.
+- `openclaw.plugin.json` is the native OpenClaw plugin manifest and declares every
+  skill root under `skills/`.
+- Each `SKILL.md` uses single-line OpenClaw frontmatter with `user-invocable: true`
+  and `metadata.openclaw` dependency hints.
+- `.clawhubignore` keeps local secrets, archives, and git metadata out of package
+  uploads.
+
+## Validate
+
+```sh
+npm run validate
+npm run pack:dry-run
+```
+
+`npm run validate` checks the OpenClaw manifest, package metadata, declared skill
+roots, single-line skill frontmatter, and ClawHub dependency metadata.
+
+## Publish
+
+The `ClawHub Package` GitHub workflow runs a dry-run on pull requests and
+publishes from a tag or manual workflow dispatch when `CLAWHUB_TOKEN` is set in
+repository secrets.
+
+For local publish testing with a current ClawHub CLI:
+
+```sh
+clawhub package publish . --family bundle-plugin --owner opendeploy-dev --dry-run
+```
 
 ## License
 
