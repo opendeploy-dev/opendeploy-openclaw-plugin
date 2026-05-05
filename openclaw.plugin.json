@@ -1,0 +1,30 @@
+{
+  "id": "opendeploy",
+  "name": "OpenDeploy",
+  "description": "Deploy and operate apps with OpenDeploy from OpenClaw through the official @opendeploydev/cli.",
+  "version": "0.0.1",
+  "enabledByDefault": true,
+  "skills": [
+    "./skills/opendeploy",
+    "./skills/deploy",
+    "./skills/opendeploy-setup",
+    "./skills/opendeploy-auth",
+    "./skills/opendeploy-context",
+    "./skills/opendeploy-config",
+    "./skills/opendeploy-env",
+    "./skills/opendeploy-database",
+    "./skills/opendeploy-domain",
+    "./skills/opendeploy-debug",
+    "./skills/opendeploy-ops",
+    "./skills/opendeploy-alarms",
+    "./skills/opendeploy-oncall",
+    "./skills/opendeploy-api",
+    "./skills/opendeploy-monorepo",
+    "./skills/opendeploy-volume"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
