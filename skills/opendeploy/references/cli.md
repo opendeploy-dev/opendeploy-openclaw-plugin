@@ -31,6 +31,38 @@ includes auth state, saved context, gateway health, and a read-only plan
 summary. If package or plugin metadata cannot be verified, do read-only
 inspection only. Ask the user before any mutating deploy step.
 
+## Agent plugin updates
+
+When `opendeploy update check --json` or `opendeploy preflight . --json`
+reports a stale OpenDeploy skill/plugin, ask the plugin update question before
+any deploy mutation. Use the command for the current host:
+
+```bash
+# Claude Code
+claude plugin marketplace update opendeploy
+claude plugin update opendeploy@opendeploy
+
+# Codex
+codex plugin marketplace upgrade opendeploy
+
+# OpenClaw
+openclaw plugins update opendeploydev
+# If updating by the recorded ClawHub package spec:
+openclaw plugins update clawhub:opendeploydev
+```
+
+For OpenClaw, the source of truth is the tracked plugin install record. The
+OpenDeploy plugin id is `opendeploydev`, and ClawHub installs record the spec
+`clawhub:opendeploydev`. `openclaw plugins update <id-or-npm-spec>` follows
+that record and fetches the newer ClawHub package. Do not use
+`openclaw skills update` for this package-level update; that command is for
+standalone workspace skills. After the update command finishes, run `openclaw gateway restart`; the CLI
+prints `Restart the gateway to load plugins and hooks`. If the package version
+is unchanged, OpenClaw may also print `opendeploydev already at 0.0.1`; treat
+that as a version-status line, not a deploy blocker. If the running OpenClaw
+agent still does not see the new skill text after gateway restart, start a new
+agent session.
+
 Before preflight-driven deploy planning or any deploy mutation, offer to update
 when npm latest is newer than the installed global CLI. If the user declines,
 continue with the installed global CLI when it supports the needed commands:
@@ -136,10 +168,10 @@ with resource commands:
 opendeploy regions list --json
 ```
 
-For normal first deploy, do not ask the user for a region. Use the API default
-or the only healthy active region (currently `us-east-1`). Ask only if the user
-explicitly requests a region or the API returns multiple user-facing active
-regions with no default.
+For normal first deploy, do not ask the user for a region. The normal
+user-facing region is `us-east-1`; use the API default or the only healthy
+active region. Ask only if the user explicitly requests a region or the API
+returns multiple user-facing active regions with no default.
 Use the returned region `id` in commands. Do not repeat the raw API `name` in
 user-facing prose; if a legacy response says `east-us-1`, display `US East 1`
 or `us-east-1`. Do not print the region UUID/internal DB id in user-facing

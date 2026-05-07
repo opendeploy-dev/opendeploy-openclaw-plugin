@@ -64,6 +64,8 @@ User-profile read for dashboard tokens and account-bound local deploy credential
 
 ### GET `/v1/regions` (cluster-service passthrough)
 Sanity-check the Bearer token and discover an active region; required for `POST /projects` and `POST /upload/upload-only`. This endpoint works for dashboard tokens, account-bound local credentials, and local credentials not yet linked to an account.
+Normal agent deploys should use the active OpenDeploy default region
+(`us-east-1`) without asking for a user preference.
 
 - **Response 200**: array of
   | field | type | note |

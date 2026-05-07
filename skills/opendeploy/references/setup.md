@@ -29,6 +29,9 @@ without asking the user. Today the only user-facing region is `us-east-1`; if
 the API later returns multiple active user-facing regions and no default, ask
 with a structured question. Do not ask for a freeform region preference during
 normal first deploy.
+OpenDeploy has one user-facing deploy target: production. Do not ask the user
+to choose production, staging, or preview, and do not pass `--environment` from
+the skill.
 Pass the region `id` to the CLI/API. If the API response still carries legacy
 `name: "east-us-1"`, treat that as internal metadata and display `US East 1` /
 `us-east-1` to the user. Do not print the region UUID/internal DB id in

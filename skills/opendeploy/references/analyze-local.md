@@ -156,6 +156,15 @@ next.config.{js,mjs,ts}, vite.config.*, nuxt.config.*, svelte.config.*,
 README* (first 200 lines only)
 ```
 
+**Config file variant rule.** Never read a hardcoded config filename until you
+have enumerated the matching variants in that directory. For framework configs,
+run `rg --files -g 'next.config.*' -g 'vite.config.*' -g 'nuxt.config.*' -g
+'svelte.config.*' -g 'astro.config.*' -g 'remix.config.*'` (or the smallest
+equivalent for the current service root), then read only the returned file(s).
+If `next.config.js` is missing but `next.config.ts` / `.mjs` / `.cjs` exists,
+read the existing variant and continue; do not stop or ask the user about the
+missing guessed filename.
+
 Real deploy env override files (`.env.local`, `.env.*.local`, and
 environment-specific secret files) are not source analysis inputs. Top-level
 `.env` is special: in PHP/Symfony/Laravel-style apps it may be committed,

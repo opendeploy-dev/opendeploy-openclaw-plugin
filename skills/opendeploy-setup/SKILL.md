@@ -3,9 +3,8 @@ name: opendeploy-setup
 version: "0.0.1"
 description: "Install, update, verify, or repair the OpenDeploy CLI and local agent setup. Use when the user says install OpenDeploy, set up OpenDeploy, setup OpenDeploy, update OpenDeploy, upgrade OpenDeploy, check version, latest version, stale CLI, stale plugin, update CLI, update plugin, verify CLI, run doctor, prepare this agent, or fix OpenDeploy installation. This skill does not create projects unless the original user request also asks to deploy."
 user-invocable: true
-metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false},{"name":"OPENDEPLOY_AUTH_FILE","required":false},{"name":"OPENDEPLOY_BASE_URL","required":false},{"name":"GIT_URL","required":false},{"name":"GIT_BRANCH","required":false},{"name":"GIT_TOKEN","required":false}],"homepage":"https://opendeploy.dev"}}
 ---
-
 
 # OpenDeploy Setup
 
@@ -44,7 +43,8 @@ Plugin question:
 
 - `Update plugin now (Recommended)` — run the current host agent's plugin update command, then tell the user the new skill normally takes effect in the next session:
   - Claude: `claude plugin marketplace update opendeploy`, then `claude plugin update opendeploy@opendeploy`
-  - Codex: `codex plugin marketplace add opendeploy-dev/opendeploy-codex-plugin --ref main`
+  - Codex: `codex plugin marketplace upgrade opendeploy`
+  - OpenClaw: `openclaw plugins update opendeploydev` (or `openclaw plugins update clawhub:opendeploydev` if updating by recorded ClawHub spec), then run `openclaw gateway restart`; OpenClaw prints `Restart the gateway to load plugins and hooks` after updating. If the agent session still does not see the new skill text, start a new session.
 - `Use installed plugin for this run` — continue with the loaded skill.
 
 CLI question:

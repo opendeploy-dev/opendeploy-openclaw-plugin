@@ -76,6 +76,9 @@ Plan must inspect:
 
 - pasted dashboard URLs, saved `.opendeploy/project.json`, and duplicate-service risk
 - framework and package manager
+- framework config variants. Enumerate existing config files before reading
+  them; do not hardcode `next.config.js` when the service may use
+  `next.config.ts`, `.mjs`, or `.cjs`.
 - primary runtime vs frontend asset tooling. Backend manifests and server entry
   points win over Vite/Webpack presence; Laravel/PHP with Vite assets is not a
   Vite static service.
