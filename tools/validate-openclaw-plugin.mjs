@@ -52,8 +52,8 @@ function parseFrontmatter(file) {
 const manifest = readJson('openclaw.plugin.json');
 const pkg = readJson('package.json');
 
-if (manifest.id !== pkg.name) {
-  throw new Error(`openclaw.plugin.json id (${manifest.id}) must match package.json name (${pkg.name})`);
+if (manifest.id !== 'opendeploydev') {
+  throw new Error('openclaw.plugin.json id must be opendeploydev');
 }
 if (!manifest.configSchema || manifest.configSchema.type !== 'object') {
   throw new Error('openclaw.plugin.json must include an object configSchema');
@@ -67,8 +67,20 @@ if (pkg.version !== manifest.version) {
 if (!pkg.openclaw?.compat?.pluginApi || !pkg.openclaw?.build?.openclawVersion) {
   throw new Error('package.json must include openclaw.compat.pluginApi and openclaw.build.openclawVersion');
 }
-if (!Array.isArray(pkg.openclaw?.extensions) || !pkg.openclaw.extensions.includes('./index.js')) {
-  throw new Error('package.json must declare openclaw.extensions with ./index.js');
+if (!Array.isArray(pkg.openclaw?.extensions) || pkg.openclaw.extensions.length === 0) {
+  throw new Error('package.json must declare openclaw.extensions');
+}
+for (const extension of pkg.openclaw.extensions) {
+  if (typeof extension !== 'string' || !extension.startsWith('./')) {
+    throw new Error(`openclaw.extensions entries must be relative paths: ${extension}`);
+  }
+  const extensionPath = path.resolve(root, extension);
+  if (!extensionPath.startsWith(root + path.sep)) {
+    throw new Error(`openclaw extension path escapes package root: ${extension}`);
+  }
+  if (!fs.existsSync(extensionPath)) {
+    throw new Error(`openclaw extension path is missing: ${extension}`);
+  }
 }
 
 const declaredSkillFiles = [];

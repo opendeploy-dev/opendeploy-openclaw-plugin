@@ -27,7 +27,7 @@ The split is intentional: **agents deploy, humans observe**. The agent registers
 After the package is published:
 
 ```sh
-openclaw plugins install clawhub:opendeploy
+openclaw plugins install clawhub:opendeploydev
 openclaw gateway restart
 ```
 
@@ -40,6 +40,13 @@ openclaw plugins install .
 openclaw gateway restart
 ```
 
+## Runtime Dependency
+
+The skills use the public OpenDeploy CLI package, `@opendeploydev/cli`, and may
+ask the agent to install or update it globally before deployment work. The
+plugin itself does not bundle the CLI binary or run an install script at plugin
+install time.
+
 ## Usage
 
 Ask OpenClaw in natural language, for example:
@@ -51,6 +58,10 @@ Deploy this project with OpenDeploy.
 OpenClaw loads the skills declared in `openclaw.plugin.json`. The canonical
 entrypoint is `opendeploy`; `deploy` is a short alias.
 
+This OpenClaw package does not ship approval hooks or hidden command
+auto-approval behavior. The `index.js` extension is intentionally minimal; the
+deployment behavior lives in the declared skills.
+
 ## ClawHub Package Shape
 
 This repository follows ClawHub's package conventions:
@@ -59,6 +70,8 @@ This repository follows ClawHub's package conventions:
   and `openclaw.build.openclawVersion`.
 - `openclaw.plugin.json` is the native OpenClaw plugin manifest and declares every
   skill root under `skills/`.
+- `index.js` is a minimal OpenClaw extension entrypoint; it does not register
+  approval hooks.
 - Each `SKILL.md` uses single-line OpenClaw frontmatter with `user-invocable: true`
   and `metadata.openclaw` dependency hints.
 - `.clawhubignore` keeps local secrets, archives, and git metadata out of package
