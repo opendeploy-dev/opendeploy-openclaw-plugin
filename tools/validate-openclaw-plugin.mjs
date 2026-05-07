@@ -52,8 +52,8 @@ function parseFrontmatter(file) {
 const manifest = readJson('openclaw.plugin.json');
 const pkg = readJson('package.json');
 
-if (manifest.id !== 'opendeploy') {
-  throw new Error('openclaw.plugin.json id must be opendeploy');
+if (manifest.id !== pkg.name) {
+  throw new Error(`openclaw.plugin.json id (${manifest.id}) must match package.json name (${pkg.name})`);
 }
 if (!manifest.configSchema || manifest.configSchema.type !== 'object') {
   throw new Error('openclaw.plugin.json must include an object configSchema');
@@ -66,6 +66,9 @@ if (pkg.version !== manifest.version) {
 }
 if (!pkg.openclaw?.compat?.pluginApi || !pkg.openclaw?.build?.openclawVersion) {
   throw new Error('package.json must include openclaw.compat.pluginApi and openclaw.build.openclawVersion');
+}
+if (!Array.isArray(pkg.openclaw?.extensions) || !pkg.openclaw.extensions.includes('./index.js')) {
+  throw new Error('package.json must declare openclaw.extensions with ./index.js');
 }
 
 const declaredSkillFiles = [];

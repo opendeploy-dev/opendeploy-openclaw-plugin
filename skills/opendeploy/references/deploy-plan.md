@@ -352,6 +352,12 @@ When writing service or deployment bodies, carry the two maps through unchanged:
 Do not use "same object for both" as a convenience fallback. Deployment history
 should show the exact env split used for that version.
 
+Every service body must also include an explicit `type`: `web` for the public
+HTTP entrypoint, `worker` for background workers, `cron` for scheduled work, or
+`static` only for static-site service mode. Validate this locally before
+calling `services create`; a missing `type` is a schema error, not a deploy
+failure.
+
 Current executable resource commands should mirror this order. Use
 `references/cli.md` for the exact command forms. The `deploy step` dispatcher is
 allowed only when the installed CLI returns executable `next_action` commands;

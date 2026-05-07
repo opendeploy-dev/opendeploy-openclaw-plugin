@@ -330,6 +330,11 @@ user-visible waiting update. When `phase` is `building`, also surface
 `build_percent` if present. Do not report only "still building"; say e.g.
 `Build 42% — still installing dependencies`.
 
+Prefer `opendeploy deploy wait` over handwritten shell polling. If polling is
+unavoidable, use a readable `while true; do ...; done` block. Do not compress
+`until`/`case` loops into one-liners; zsh parse errors such as `parse error near
+done` waste deploy attempts and hide the real deployment state.
+
 On success, proceed to the final report.
 
 Before printing the success contract, run a quick app-level smoke check:
@@ -468,10 +473,11 @@ Scan the most-recent pod's earliest entries for migration evidence:
 
 | Pattern | Meaning |
 |---|---|
-| `Operations to perform`, `Applying \w+`, `Running migrations`, `migrations: ok`, `Loaded \d+ migrations` | migrate ran |
-| `relation ".*" does not exist`, `no such table`, `OperationalError`, `password authentication failed for user "<placeholder>"`, `role "<placeholder>" does not exist` | migrate did NOT run, or DB credentials are wrong |
-| start_command's first token (e.g. literal `python manage.py`, `bundle exec`, `php artisan`) | `start_command` override was honored |
-| neither pattern present | `start_command` was silently dropped (Dockerfile builders) — the pod ran the image's `CMD` directly |
+| `Operations to perform`, `Applying \w+`, `Running migrations`, `migrations: ok`, `Loaded \d+ migrations`, `migrate deploy`, `Migration.*applied` | migrate ran |
+| `relation ".*" does not exist`, `TableDoesNotExist`, `P2021`, `no such table`, `OperationalError`, `password authentication failed for user "<placeholder>"`, `role "<placeholder>" does not exist` | migrate did NOT run, or DB credentials are wrong |
+| `Environment variable not found: .*DATABASE.*`, `Missing.*DIRECT.*URL`, `shadowDatabaseUrl` | migration env alias is missing |
+| start command's first token or migration command (e.g. literal `python manage.py`, `bundle exec`, `php artisan`, `prisma migrate`) | the intended command path was honored |
+| neither pattern present | the service command override may have been dropped — the pod ran the generated image command or Dockerfile `CMD` directly |
 
 **If the failure pattern wins, do NOT print the success banner.** Demote to a
 half-success report:
@@ -486,14 +492,15 @@ The web service started (HTTP 200 on `/health/`-style endpoints), but database
 migrations have not run. Endpoints that touch the database will return errors
 until migrations run.
 
-**Likely cause:** the platform may silently drop `start_command` for
-`builder: dockerfile` services. Patch `start_command` was not honored.
+**Likely cause:** the runtime command did not execute the migration path, or a
+required migration env alias is missing.
 
 **Suggested fix:**
-1. Edit the Dockerfile `CMD` line to chain migrations before the server start:
-   `CMD ["sh", "-c", "python manage.py migrate --noinput && exec <original-cmd>"]`
-   (substitute `bundle exec rake db:migrate`, `php artisan migrate --force`, etc.).
-2. Re-upload source and create a new deployment.
+1. Put migrations in the command path the image actually runs. For Dockerfile
+   services, edit `CMD` / entrypoint; for package-manager auto-builder
+   services, edit the package start script if that is what the image runs.
+2. Add any missing migration-only DB URL aliases to the service env.
+3. Re-upload source and create a new deployment.
 
 **Project ID:** `<PROJECT_ID>`
 **Service ID:** `<SERVICE_ID>`

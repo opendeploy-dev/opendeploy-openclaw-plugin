@@ -45,6 +45,12 @@ Challenge these points:
   would override generated managed dependency env.
 - Monorepo source root is too broad or points at the wrong app.
 - Worker/web services are collapsed incorrectly.
+- Auto-detection selected tooling/scaffolding directories (`.cursor`,
+  `.devcontainer`, generators, CLIs, examples, docs, config packages) instead
+  of the app service graph.
+- A build-needed Dockerfile or wrapper Dockerfile is placed in a metadata
+  directory that the smart archive excludes (`.opendeploy/`, `.claude/`,
+  `.codex/`, `.agents/`).
 - Docker `EXPOSE`, compose container port, framework default, and `PORT` env
   disagree.
 - Dockerfile exposes multiple ports and the selected one is SSH/SMTP/raw TCP
@@ -56,6 +62,9 @@ Challenge these points:
 - DB-backed framework migrations are needed but not planned before first
   traffic. Check for `manage.py migrate`, Rails migrations, Laravel
   `php artisan migrate`, Prisma/Drizzle/Alembic commands, and similar.
+- Migration commands reference DB env aliases that are missing from the
+  service env plan. Check ORM/schema/config files, not just application
+  runtime code.
 - Late-bound URL/domain env (`APP_URL`, `BASE_URL`, `ROOT_URL`, `SITE_URL`,
   `PUBLIC_URL`, `CANONICAL_URL`, `SERVER_URL`, `WEB_URL`, or nested
   `__ROOT_URL` / `__DOMAIN` variants) is required but not planned.
@@ -203,6 +212,26 @@ Classify the monorepo shape:
 For multi-service plans, emit one public entrypoint unless the user explicitly
 asks for multiple public services/domains. Workers and cron services are
 internal by default.
+
+### Multi-service sanity checks
+
+- Build a service graph, not one OpenDeploy service per directory.
+- Ignore tooling packages even when they have `package.json`, `Dockerfile`, or
+  scripts. App evidence must include a runtime role: public web/API, worker,
+  scheduler, or explicitly requested internal service.
+- Ignore local-only proxy/shim packages that listen on localhost and forward to
+  another app; deploy the real upstream app service instead when source/docs
+  identify it.
+- Prebuilt app images are valid when repo docs/compose point to them. If image
+  services are unavailable in the current CLI, create tiny wrapper Dockerfiles
+  in an included path such as `Dockerfile.web` / `Dockerfile.worker`; do not
+  put them under `.opendeploy/`.
+- Worker-only services need an explicit readiness plan. If no HTTP listener is
+  present and the platform requires one, ask before adding a minimal health
+  shim. Do not expose a worker as the public service just to satisfy a port.
+- Before upload, compare `archive_manifest.files` / `included_overrides` with
+  each service's `dockerfile_path`, build context, and `COPY` sources. A
+  service-specific Dockerfile that is absent from the archive is a blocker.
 
 ---
 
@@ -368,6 +397,11 @@ Runtime/build split:
 - Do not mirror all keys between the two maps. A key belongs in both only when
   repo evidence shows it is consumed by both a build step and the running
   process. Record that reason in the plan.
+- Late-bound public client keys are often both build-time and runtime when the
+  app embeds them into client bundles and also reads them on the server. For
+  prefixes such as `NEXT_PUBLIC_`, `VITE_`, `REACT_APP_`, `PUBLIC_`,
+  `NUXT_PUBLIC_`, or `EXPO_PUBLIC_`, record whether the key needs a post-domain
+  rebuild, not just a runtime patch.
 - Dependency env from managed DB/cache belongs in `runtime_variables` unless a
   build step explicitly connects to the dependency. Avoid build-time DB access
   by default because it makes clean builds depend on live runtime services.
@@ -539,9 +573,11 @@ strategy. Available options:
   uploads, backups, media, SQLite, file queues, on-disk repo storage, indexes,
   or any app that writes durable data to a fixed filesystem path). For a
   **new service** in the current deploy, include `volumes` inline in
-  `service.json` on `services create` (StatefulSet from the start, no
-  downtime). For an **existing service**, route to `opendeploy-volume`; the
-  first volume on an existing service triggers a destructive
+  `service.json` on `services create` when the CLI/backend supports it, then
+  read back `volumes` or `opendeploy volumes list --service <id> --json`.
+  If the active volume is not visible, add it through `opendeploy-volume`
+  before first deploy. For an **existing service**, route to
+  `opendeploy-volume`; the first volume on an existing service triggers a destructive
   Deployment→StatefulSet conversion with ~30s downtime.
 - Configure the app's supported object-storage/media env when the app is
   already designed for external object storage and only needs S3/R2/Spaces env.
@@ -575,6 +611,22 @@ deploy:
 - Prisma/Drizzle: `prisma migrate deploy`, `drizzle-kit migrate`
 - Alembic: `alembic upgrade head`
 
+For ORM-backed apps, also scan schema/config files for env-based migration
+connection keys:
+
+- Prisma: `datasource` blocks, `url = env("...")`, `directUrl = env("...")`,
+  and `shadowDatabaseUrl = env("...")`.
+- Drizzle/Kysely/TypeORM/Sequelize: config files that read `process.env.*`,
+  especially migration-specific URLs.
+- Generic aliases: `DATABASE_DIRECT_URL`, `DIRECT_URL`,
+  `MIGRATE_DATABASE_URL`, `MIGRATION_DATABASE_URL`, `SHADOW_DATABASE_URL`,
+  and `PRISMA_DATABASE_URL`.
+
+If the migration command requires a second URL that can safely point to the
+same fresh managed DB, synthesize it from the managed dependency URL before
+service creation and record the alias. If source evidence says it must point
+elsewhere, ask for that value before mutation.
+
 If a fresh managed DB is created, include a migration path in the deploy plan
 before service creation. Prefer a platform one-off/release command when
 available; otherwise ask before adding a start-command migration prefix. If the
@@ -596,7 +648,9 @@ OpenDeploy support instead of retrying the same migration.
 
 For late-bound app URL env, record the key names so Step 9 can patch them after
 the live URL is known. Do not invent app-specific keys; only patch keys that the
-repo itself references.
+repo itself references. If any of those keys are build-time public/client
+prefixes, plan `patch env + new deployment`; a restart cannot rebuild the
+client bundle.
 
 Scan for a documented health/readiness endpoint before service creation. Prefer
 repo evidence such as `/health`, `/healthz`, `/ready`, `/status`, `/srv/status`,

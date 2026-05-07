@@ -257,7 +257,8 @@ for a schema that works.
 `service.json` must set:
 
 - `name`
-- `type`
+- `type` (`web` for an HTTP service, `worker` for a background service,
+  `cron` for scheduled work, `static` only for static-site service mode)
 - `language`
 - `framework`
 - `port`
@@ -278,6 +279,17 @@ prefixes. Do not copy all runtime keys into `build_variables` or all build keys
 into `runtime_variables`. Before create, run a local JSON check or equivalent
 and verify the planned key names are under the exact fields with any overlap
 explained by source evidence.
+
+Minimum pre-create body validation:
+
+```bash
+jq -e '.type as $t | ($t == "web" or $t == "worker" or $t == "cron" or $t == "static")' service.json
+jq -e 'has("runtime_env") or has("runtime_envs") or has("env") or has("environment_variables") or has("runtimeVars") or has("build_env") or has("buildtime_variables") | not' service.json
+```
+
+If the API returns `CreateServiceRequest.Type` or `Type required`, the body is
+schema-invalid. Add the correct `type` to the same body, read back services by
+stable name, and retry once only if no matching service was created.
 
 Immediately after service creation, read back key names:
 

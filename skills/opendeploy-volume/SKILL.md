@@ -6,6 +6,7 @@ user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
+
 # OpenDeploy Volume
 
 This skill manages persistent volumes attached to OpenDeploy user services.
@@ -229,15 +230,29 @@ shows `status=orphaned` with a non-null `orphaned_at` and `expires_at`.
 ## Quota and storage caps
 
 Storage quota is per-plan (free / paid tiers). The API rejects creates and
-expansions that would push total active+orphaned storage over the plan
-cap. When this happens, the CLI returns:
+expansions that would push total active+orphaned storage over the effective
+plan cap, including active storage add-ons. When this happens, the CLI returns
+a structured 403 body such as:
 
 ```
-{"error": "quota_exceeded", "requested": "10Gi", "available": "5Gi", "plan": "free"}
+{
+  "error": "quota_exceeded",
+  "requested": "10Gi",
+  "available": "5Gi",
+  "exceeded_resources": [
+    {"resource_type": "storage", "current": 115, "requested": 10, "limit": 120, "unit": "GB"}
+  ],
+  "available_addons": [
+    {"display_name": "Storage add-on", "resource_type": "storage", "quantity": 100, "unit": "GB", "price": 10, "currency": "USD"}
+  ]
+}
 ```
 
-Surface this verbatim to the user and ask with `Upgrade plan (Recommended)` as
-the first option. If the user chooses upgrade, return
+Surface the storage current/requested/limit and any matching storage add-on
+name, quantity, and price. If the backend returned 403 here, do not tell the
+user "maybe add-ons were not counted" — they were already included in the
+effective limit. Ask with `Upgrade plan (Recommended)` as the first option. If
+the user chooses upgrade, return
 `https://dashboard.opendeploy.dev/settings` exactly. Do not retry; do
 not silently pick a smaller size.
 
@@ -273,7 +288,7 @@ do not paraphrase, retry silently, or pick a "smart" fallback.
 | 400 | `not_active` | Tried to resize / detach a volume that isn't `status=active` | Re-list and pick a different volume |
 | 400 | `not_orphaned` | Tried to restore a volume whose status isn't `orphaned` | Re-list to confirm current status |
 | 400 | `force_requires_orphaned` | Tried `--force` (?force=true) on an active volume | Detach first (without `--force`), then issue the force-delete on the now-orphaned row |
-| 403 | `quota_exceeded` | Total active+orphaned storage would exceed plan cap | Show `requested` + `available` from the response. Ask with `Upgrade plan (Recommended)` first; if chosen, return `https://dashboard.opendeploy.dev/settings`. Do NOT retry with smaller unless the user chooses resource adjustment. |
+| 403 | `quota_exceeded` | Total active+orphaned storage would exceed effective plan + add-on cap | Show `exceeded_resources[storage]` current/requested/limit and any matching storage `available_addons` quantity/price. Ask with `Upgrade plan (Recommended)` first; if chosen, return `https://dashboard.opendeploy.dev/settings`. Do NOT retry with smaller unless the user chooses resource adjustment. |
 | 403 | `owner_mismatch` | Restore attempted by someone other than the original owner | Tell the user only the original owner can restore; surface the volume's `owner_uid` so the right account can be reached |
 | 409 | `duplicate_name` | A live volume on this service already has this name | Pick a different name; do NOT add a numeric suffix automatically — names are user-meaningful |
 | 409 | `duplicate_mount` | A live volume on this service already mounts at this path | Pick a different `mount_path` (e.g. `/var/lib/foo` vs `/data/foo`) |

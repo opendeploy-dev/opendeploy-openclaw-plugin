@@ -2,6 +2,7 @@
 .github/
 .DS_Store
 node_modules/
+hooks/
 npm-debug.log*
 *.zip
 *.tgz

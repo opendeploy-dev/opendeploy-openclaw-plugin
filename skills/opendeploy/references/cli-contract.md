@@ -86,8 +86,8 @@ report rather than retry.
 | `auth_forbidden` | HTTP 403 (not bind_required) | no | ask user; do not retry |
 | `bind_required` | `{error: "bind_required"}` | no | print the dashboard binding URL; ask user to bind |
 | `consent_required` | local: missing `--confirm-*` flag | n/a | ask user, resume with the CLI-returned `resume_command` |
-| `quota_exceeded` | `{error: "quota_exceeded", quota_type, limit, used}` | no | ask user; recommend plan upgrade; if chosen return `https://dashboard.opendeploy.dev/settings`; don't retry |
-| `guest_quota_exceeded` | `{error: "guest_quota_exceeded", field, requested, limit}` | no | report the field (cpu/memory/replicas); recommend plan upgrade; if chosen return `https://dashboard.opendeploy.dev/settings`; otherwise shrink |
+| `quota_exceeded` | `{error, exceeded_resources:[{resource_type,current,requested,limit,unit}], available_addons:[{display_name,resource_type,quantity,unit,price,currency}]}` | no | backend has already calculated effective plan + add-on quota. Report each resource (`storage`, `cpu`, `memory`, `replicas`, `projects/services/domains`, `deployments/daily_deployments`, `bandwidth/data_transfer`) with current/requested/limit; name matching add-on quantity/price when present; ask with Upgrade plan/add-on (Recommended); if chosen return `https://dashboard.opendeploy.dev/settings`; don't retry |
+| `guest_quota_exceeded` | `{error: "guest_quota_exceeded", field, requested, limit}` | no | report the field (`cpu_limit`, `cpu_request`, `memory_limit`, `memory_request`, `replicas`) and values; recommend plan upgrade; if chosen return `https://dashboard.opendeploy.dev/settings`; otherwise shrink only that field |
 | `subscription_required` | `{error: "subscription_required"}` | no | recommend plan upgrade; if chosen return `https://dashboard.opendeploy.dev/settings` |
 | `rate_limited` | HTTP 429 | yes | back off, then retry once |
 | `gateway_unreachable` | network / DNS error | yes | retry once; if still failing, report and stop |

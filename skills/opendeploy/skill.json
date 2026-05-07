@@ -157,6 +157,7 @@
     "replicas": 1,
     "upgrade_url": "https://dashboard.opendeploy.dev/settings",
     "upgrade_recommendation": "When a quota/plan gate blocks the intended deploy, ask with Upgrade plan (Recommended) first. If chosen, return upgrade_url exactly and stop mutation until the user comes back.",
+    "quota_resource_guidance": "If the backend returns exceeded_resources, treat it as authoritative because active add-ons are already included. Report the exact resource, current/requested/limit, and matching available_addons before recommending upgrade.",
     "services_per_project_hard_cap": null,
     "services_per_project_recommended_max": 3,
     "managed_database": true,

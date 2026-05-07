@@ -1,5 +1,5 @@
 {
-  "name": "opendeploy",
+  "name": "opendeploydev",
   "version": "0.0.1",
   "description": "OpenDeploy skills packaged as a native OpenClaw plugin for ClawHub.",
   "type": "module",
@@ -26,9 +26,9 @@
     "mongodb"
   ],
   "files": [
+    "index.js",
     "openclaw.plugin.json",
     "skills/",
-    "hooks/",
     "scripts/",
     "README.md",
     "LICENSE"
@@ -38,6 +38,9 @@
     "pack:dry-run": "npm pack --dry-run"
   },
   "openclaw": {
+    "extensions": [
+      "./index.js"
+    ],
     "compat": {
       "pluginApi": ">=2026.3.24"
     },

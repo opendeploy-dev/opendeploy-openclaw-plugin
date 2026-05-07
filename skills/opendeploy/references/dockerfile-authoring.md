@@ -32,6 +32,12 @@ Prefer the smallest deploy-specific surface:
 Do not create `Dockerfile.opendeploy` for first deploy. Current builders are
 most reliable with source-root `Dockerfile`.
 
+For multi-service plans that need more than one wrapper Dockerfile, use
+included paths such as `Dockerfile.web`, `Dockerfile.worker`, or
+`deploy/Dockerfile.worker`, then set `dockerfile_path` exactly to that path.
+Do not place build-needed Dockerfiles under `.opendeploy/`, `.claude/`,
+`.codex/`, or `.agents/`; smart archives exclude those metadata directories.
+
 ## General rules
 
 - Use multi-stage builds for compiled languages.
@@ -43,6 +49,11 @@ most reliable with source-root `Dockerfile`.
 - Use `CMD` for the final long-running server. Avoid relying on OpenDeploy
   `start_command` to override Dockerfile mode when migrations or shell chaining
   are required.
+- For package-manager auto-builder services, first identify the package script
+  the generated image actually runs. If it runs `start`, a source-approved
+  package-script patch can be the smallest reliable way to add first-boot
+  migrations; do not jump straight to a full Dockerfile when the script path is
+  clear.
 - If the image drops privileges or runs as a non-root user, set writable runtime
   locations in the image or entrypoint (`HOME`, `XDG_CACHE_HOME`, `TMPDIR`, and
   language-specific cache paths) and create/chown those directories. Avoid
@@ -102,6 +113,20 @@ Use the package manager from the lockfile or `packageManager`. Pin Corepack to
 the repo-declared version when present. For static Vite/SPA projects, prefer a
 small static server image only when the output directory and SPA fallback are
 known.
+
+## Prebuilt-image wrapper
+
+Use when source evidence says the app is intended to run from a published image
+and OpenDeploy image-service creation is not available in the current CLI.
+
+```dockerfile
+FROM vendor/app:tag
+```
+
+For a worker that does not listen on HTTP but needs a readiness endpoint on the
+current platform, ask before adding a tiny health shim. The shim must start the
+real worker as the main child process and exit when the worker exits; it is not
+a substitute for fixing a crashing worker.
 
 ## Ruby / Rails
 

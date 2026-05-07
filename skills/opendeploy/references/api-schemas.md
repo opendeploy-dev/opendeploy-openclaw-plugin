@@ -396,7 +396,7 @@ patches.
   When `workload_conversion=true` the caller MUST poll the deployment
   status until `running` before considering the operation complete.
 - **Errors**:
-  - `403 quota_exceeded` - requested + existing volumes exceed plan storage cap. Body includes `requested`, `available`, `plan`.
+  - `403 quota_exceeded` - requested + existing volumes exceed plan storage cap. Body includes `requested`, `available`, `total`, `exceeded_resources`, and matching storage `available_addons` with quantity/price when configured.
   - `409 worker_capability_missing` - platform mid-rollout, retry in ~1 minute.
   - `409 conversion_in_progress` - service is already in a workload conversion.
 

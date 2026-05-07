@@ -6,6 +6,7 @@ user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
+
 # OpenDeploy Monorepo / Multi-Service
 
 This skill turns a repo with multiple deployable pieces into one OpenDeploy
@@ -73,8 +74,9 @@ Score candidates before asking the user:
   `rabbitmq`, `kafka`, `mailpit`, `smtp`, or `storage` images/compose services.
 - Ignore signal: config-only packages (`eslint`, `prettier`, `tsconfig`,
   `tailwind-config`), examples, docs, storybook, playground, benchmark, tests,
-  seed/setup/init-only containers, `.devcontainer`, and compose services gated
-  by dev/test profiles.
+  seed/setup/init-only containers, `.devcontainer`, local-only proxy/shim
+  packages that only forward to another app, and compose services gated by
+  dev/test profiles.
 
 Default to the highest-scoring public web/API service plus its required
 workers and managed DB/cache. Ask only if two or more real public entrypoints
@@ -96,6 +98,12 @@ For `docker-compose.y?(a)ml`:
   source-build services. Classify them as managed dependencies when OpenDeploy
   has a catalog item; otherwise surface the required image sidecar/support gap
   instead of trying to build it from the repo.
+- When source evidence or upstream docs recommend a prebuilt app image, that is
+  a valid OpenDeploy plan. If the current CLI cannot create image services
+  directly, add a tiny wrapper Dockerfile (`FROM <image>`) per app service
+  after source-edit approval. Place wrapper Dockerfiles at the upload root or a
+  non-excluded deploy directory, not under `.opendeploy/`, `.claude/`,
+  `.codex/`, or `.agents/`.
 - Do not deploy Docker Compose as a runtime unit. Convert compose into
   OpenDeploy services, managed dependencies, env links, ports, domains, and
   volumes.
@@ -136,6 +144,12 @@ Use this multi-service planning model:
   service.
 - Same image, different mode is valid. Reuse one Dockerfile and set different
   `start_command` / env mode per service when the repo supports it.
+- If multiple services use wrapper Dockerfiles or nested Dockerfiles, keep
+  `source_path` at the uploaded root and set `dockerfile_path` to a file that
+  exists inside that archive, such as `Dockerfile.web` and `Dockerfile.worker`.
+  Run `opendeploy archive create . --json` and verify those Dockerfiles are
+  included before upload. Do not put build-needed Dockerfiles in `.opendeploy/`;
+  that directory is metadata and is excluded from source archives.
 - Working directory matters. For shared workspaces, commands may need `cd` into
   the app package after installing from the repo root.
 - For JavaScript workspaces, prefer package-manager filters over changing the
@@ -149,8 +163,29 @@ Use this multi-service planning model:
 - Plan migrations/init before first traffic. Prefer a one-off/release command
   if OpenDeploy exposes one; otherwise use a safe first-deploy start command or
   Dockerfile entrypoint after user approval.
+- Migration commands must run in the command path the container actually uses.
+  In auto-builder/package-manager mode, check whether the generated image runs
+  the package `start` script; if so, patch that script after source-edit
+  approval instead of assuming a service `start_command` override will win. In
+  Dockerfile mode, prefer a Dockerfile `CMD`/entrypoint wrapper. Always prove
+  the migration ran with the post-deploy smoke test before reporting success.
+- Scan ORM/schema/config files for all DB URL aliases used by migrations, not
+  only the app's main connection string. Examples include `DIRECT_URL`,
+  `DATABASE_DIRECT_URL`, `MIGRATE_DATABASE_URL`, `SHADOW_DATABASE_URL`, and
+  ORM-specific `directUrl` / `shadowDatabaseUrl` env references. If the app
+  requires a direct migration URL and the managed DB URL is appropriate, set
+  both before service creation.
 - For DB/cache, create managed dependencies first, wait ready, fetch env, then
   create all app services with final runtime env.
+- For local persistent data, add the volume before first deploy when possible,
+  then read back `opendeploy volumes list --service <id> --json` or the
+  service `volumes` field. If no active volume appears, do not claim storage is
+  attached and do not deploy data-loss-sensitive services until the storage
+  decision is resolved.
+- Workers usually do not listen on HTTP. Prefer service `type: worker` and
+  `internal_only: true`. If the current platform still requires an HTTP
+  readiness port for that worker, ask before adding a tiny health shim that
+  starts the worker process and serves `200 ok` on the configured health port.
 - Use the smallest known-good service-create body. When schema support is
   uncertain, create with stable core fields first, read back verification, then
   patch env/config. If a create times out or returns 5xx, read back by stable
@@ -158,6 +193,10 @@ Use this multi-service planning model:
   duplicates.
 - Save/record every service ID after creation. Redeploys must pass the existing
   service ID; omitting it can create duplicates.
+- If the dependency catalog exposes a nearby but different engine version than
+  the app docs name, allow the deploy only with a concise note and a smoke test
+  plan. Do not casually say the version is "fine"; say what version is
+  available and what runtime check will prove compatibility.
 
 ## User Questions
 

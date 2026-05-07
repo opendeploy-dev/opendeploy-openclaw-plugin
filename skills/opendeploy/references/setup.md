@@ -229,7 +229,8 @@ expected service config includes the chosen listener `port`, matching
 `service.json` should include:
 
 - `name`
-- `type`
+- `type` (`web` for an HTTP service, `worker` for a background service,
+  `cron` for scheduled work, `static` only for static-site service mode)
 - `language`
 - `framework`
 - `port`
@@ -250,13 +251,18 @@ Before calling `services create`, validate the body shape locally and compare
 the planned key set against these two maps:
 
 ```bash
+jq -e '.type as $t | ($t == "web" or $t == "worker" or $t == "cron" or $t == "static")' service.json
 jq 'has("runtime_env") or has("runtime_envs") or has("env") or has("environment_variables") or has("runtimeVars") or has("build_env") or has("buildtime_variables")' service.json
 jq -r '(.runtime_variables // {}) | keys[]' service.json
 jq -r '(.build_variables // {}) | keys[]' service.json
 ```
 
-The first command must print `false`. If the app/dependencies require env keys,
-the second/third commands must show the planned key names before mutation.
+The first command must exit 0. The second command must print `false`. If the
+app/dependencies require env keys, the third/fourth commands must show the
+planned key names before mutation. If `services create` returns
+`CreateServiceRequest.Type` / `Type required`, fix the same `service.json` by
+adding the correct `type` and retry once after reading back by stable service
+name; do not create a second service.
 
 Set the detected port explicitly. If a framework has a strong port default
 (for example Vite preview 4173 or Next.js 3000), record why the port was chosen
