@@ -3,7 +3,7 @@ name: opendeploy-monorepo
 version: "0.0.1"
 description: "Plan OpenDeploy service splits for monorepos, workspaces, docker-compose apps, web+worker apps, cron jobs, and multi-service projects. Use when the user says monorepo, workspace, pnpm workspace, turborepo, nx, multiple apps, multiple services, worker, queue, cron, docker-compose, compose, Procfile, web/API split, root directory, app directory, service split, or when OpenDeploy analysis detects more than one candidate service."
 user-invocable: true
-metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false},{"name":"OPENDEPLOY_AUTH_FILE","required":false},{"name":"OPENDEPLOY_BASE_URL","required":false},{"name":"GIT_URL","required":false},{"name":"GIT_BRANCH","required":false},{"name":"GIT_TOKEN","required":false}],"homepage":"https://opendeploy.dev"}}
+metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy dashboard/API token for account-bound operations."},{"name":"OPENDEPLOY_AUTH_FILE","required":false,"description":"Optional path to the local OpenDeploy auth file."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL override."},{"name":"GIT_URL","required":false,"description":"Optional source repository URL for Git-based deploy flows."},{"name":"GIT_BRANCH","required":false,"description":"Optional branch name for Git-based deploy flows."},{"name":"GIT_TOKEN","required":false,"description":"Optional Git provider token for private source fetches."}],"homepage":"https://opendeploy.dev"}}
 ---
 
 # OpenDeploy Monorepo / Multi-Service
@@ -141,6 +141,17 @@ Use this multi-service planning model:
   frontend to the API URL after domains exist. Do not drop the frontend because
   the API has the clearer Dockerfile, and do not expose a worker as the public
   service.
+- Create a deploy order before mutation. Normal order is managed dependencies,
+  core API/web service, websocket/realtime services, frontend/dashboard, then
+  workers/cron. Deploy one service at a time until the core public path is
+  healthy, then add secondary services. Do not queue every service at once
+  unless the quota check and service graph prove that a parallel rollout fits.
+- Before creating services, write a compact resource budget: service count,
+  requested memory/CPU per service, managed dependency count, and expected
+  rollout buffer. Use the smallest known-good limits for workers, dashboards,
+  websocket/realtime nodes, and wrapper-image services. If quota is tight, ask
+  before a paid add-on or reduce the planned graph; do not discover quota by
+  creating replacement services after failures.
 - Same image, different mode is valid. Reuse one Dockerfile and set different
   `start_command` / env mode per service when the repo supports it.
 - If multiple services use wrapper Dockerfiles or nested Dockerfiles, keep
@@ -159,6 +170,12 @@ Use this multi-service planning model:
   expose watch paths: which directories should trigger each service and which
   shared packages are required. This prevents agents from narrowing source too
   far on redeploy.
+- For wrapper-image deploys, keep the upload source tiny but complete: one
+  included Dockerfile per service plus any small health/start wrapper needed by
+  those Dockerfiles. Keep generated service/dependency/deployment body files and
+  secrets outside the upload directory. Run `opendeploy archive create . --json`
+  from the wrapper source and verify no `.secrets`, `.env`, token, or private
+  body file is included before upload.
 - Plan migrations/init before first traffic. Prefer a one-off/release command
   if OpenDeploy exposes one; otherwise use a safe first-deploy start command or
   Dockerfile entrypoint after user approval.
@@ -176,6 +193,16 @@ Use this multi-service planning model:
   both before service creation.
 - For DB/cache, create managed dependencies first, wait ready, fetch env, then
   create all app services with final runtime env.
+- Before first deploy, resolve startup-critical URL-shaped env to either a real
+  internal/public service URL, a syntactically valid boot placeholder, or an
+  approved omission when source evidence shows the feature is disabled. Empty
+  strings for values consumed by `new URL(...)`, schema validators, or startup
+  config are not safe; catch them before a CrashLoop teaches the agent one key
+  at a time.
+- Late-bound service-to-service and public URL env must have an explicit pass:
+  deploy the service that mints the needed URL, patch only the consumers that
+  need that URL, then create a new deployment for those consumers. Do not rely
+  on `services restart` to refresh app-visible env.
 - For local persistent data, add the volume before first deploy when possible,
   then read back `opendeploy volumes list --service <id> --json` or the
   service `volumes` field. If no active volume appears, do not claim storage is
@@ -190,8 +217,20 @@ Use this multi-service planning model:
   patch env/config. If a create times out or returns 5xx, read back by stable
   service name before retrying so one bad schema probe does not create
   duplicates.
+- For each created service, read back and record a service identity matrix:
+  service id, name, kind, `type`, public/internal flag, port, `source_path`,
+  `dockerfile_path`, build/start command, expected image/Dockerfile, and whether
+  the service is allowed to have a domain. If later logs show a different image,
+  port, Dockerfile, or Kubernetes resource name under that deployment id, stop
+  normal deploy loops and treat it as service mapping corruption.
 - Save/record every service ID after creation. Redeploys must pass the existing
   service ID; omitting it can create duplicates.
+- Recovery order for failed multi-service deploys is: inspect logs and service
+  read-back, patch the same service config/env, try `deployments retry` when it
+  can reuse the existing rollout slot, then create one fresh deployment for the
+  same service. Do not create replacement services, stop unrelated healthy
+  services, or use version rollback as a config repair unless read-back proves
+  the original service row is gone and the user has approved the recovery plan.
 - If the dependency catalog exposes a nearby but different engine version than
   the app docs name, allow the deploy only with a concise note and a smoke test
   plan. Do not casually say the version is "fine"; say what version is

@@ -49,10 +49,14 @@ CI/headless/non-interactive contexts; require a pre-provisioned token there.
 
 The consent prompt must say:
 
-- OpenDeploy will create one local deploy credential.
+- First deploy is free, requires no OpenDeploy account creation, and asks for
+  no payment method.
+- OpenDeploy will create one local deploy credential so the agent can deploy
+  without making the user sign up first.
 - The credential is written to `~/.opendeploy/auth.json` with mode `0600`.
 - The token is sent only to `https://dashboard.opendeploy.dev/api`.
-- The first successful deploy returns an account-binding URL.
+- The first successful deploy returns a live `*.opendeploy.run` URL and then an
+  optional account-binding URL.
 - Removing skill files does not revoke the saved token.
 
 ## Auth File Shape

@@ -334,7 +334,10 @@ opendeploy services env get "$PROJECT_ID" "$SERVICE_ID" --json
 Verify:
 
 - service exists under the planned project
+- service id/name match the intended service in the multi-service graph
 - port matches the plan
+- `type`, public/internal setting, build/start command, `source_path`, and
+  `dockerfile_path` match the plan for that specific service
 - required env keys are present
 - DB/cache env keys are present before deployment
 - no env values are printed in the final answer
@@ -345,3 +348,15 @@ whether `service.json` used a wrong alias such as `runtime_env`; if so, patch
 the env with `opendeploy services env patch --body ... --confirm-env-upload`,
 read back again, and only then continue. If verification fails for any reason,
 patch the service/env and verify again before moving to upload/update-source.
+
+For multi-service projects, keep a service identity matrix before the first
+deployment:
+
+| service | id | kind | public/internal | port | source_path | dockerfile_path | build/start evidence |
+|---|---|---|---|---|---|---|---|
+
+Use it during failure recovery. If a deployment log, version record, or runtime
+resource name indicates that service A is building service B's Dockerfile/image
+or listening on service B's port, stop normal retry/rollback loops and report a
+service mapping/platform inconsistency with the project/service/deployment IDs.
+Do not create replacement services until the user approves that recovery path.

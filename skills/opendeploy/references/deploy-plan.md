@@ -116,6 +116,8 @@ Plan must inspect:
 - DB/cache type
 - DB/cache env aliases
 - service count vs guest cap
+- multi-service resource budget: requested CPU/memory per service, managed
+  dependency count, and rollout buffer for replacement deployments
 - source archive excludes
 - source archive smart-packaging decisions (`required_files`,
   `included_overrides`, `secret_like_entries`, `git_metadata`, warnings)
@@ -178,6 +180,11 @@ For monorepos and multi-service apps, add a compact service graph:
 | Service | Kind | Source | Build | Start | Port | Dependencies |
 |---|---|---|---|---|---|---|
 
+Also add a compact rollout order and identity budget before mutation:
+
+| Order | Service | Why now | Needs URL from | Patches after live URL | Memory |
+|---|---|---|---|---|---|
+
 Rules:
 
 - Isolated sub-apps can use the app directory as source/root.
@@ -190,8 +197,20 @@ Rules:
   path would be the watch path.
 - One public HTTP entrypoint by default. Workers, queues, schedulers, and cron
   services stay internal unless the user asks for multiple public services.
+- Deploy one service at a time until the core public route is healthy. Prefer
+  dependencies -> API/web -> websocket/realtime -> frontend/dashboard ->
+  workers/cron. Parallel deployment is allowed only when the resource budget and
+  service graph prove that all rollout buffers fit.
 - Same Dockerfile/image with different start commands or mode env is valid when
   the repo supports web/worker variants.
+- For wrapper-image services, use a tiny included upload source and one
+  explicit Dockerfile per service. Store generated secret/body files outside the
+  upload root, then run the archive manifest check before upload.
+- For URL-shaped env consumed at startup, plan a real service URL, valid boot
+  placeholder, or an approved omission before first deploy. Empty URL strings
+  are unsafe when source evidence shows startup validators or `new URL(...)`.
+- Late-bound service URLs require a planned patch plus new deployment for each
+  consumer. Do not count a restart as applying app-visible env changes.
 - Compose files are input evidence, not a deployment unit. Source-built app
   entries become services; `postgres`/`mysql`/`mongo`/`redis`/`valkey` become
   managed dependencies when supported; image-only sidecars are either managed

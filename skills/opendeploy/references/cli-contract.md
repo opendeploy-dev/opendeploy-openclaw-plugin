@@ -166,6 +166,10 @@ security_sensitive
 live_service_change
 ```
 
+`paid` is never expected on a normal first deploy. Agents should mention paid
+approval only when the CLI/gateway returns a concrete quota/add-on/billing gate
+or when the user explicitly requested a paid resource.
+
 Friendly CLI flags map to these kinds:
 
 ```text

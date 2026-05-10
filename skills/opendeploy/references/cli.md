@@ -124,6 +124,11 @@ label. It is not used by the backend to match or verify auth.
 
 ## First deploy sequence
 
+Normal first deploy is no-pay and no-account: after local deploy credential
+consent, OpenDeploy deploys and returns a live URL plus an optional account
+binding URL. Do not ask for payment, plan choice, account creation, staging, or
+region preference unless the CLI/gateway returns a concrete gate.
+
 Start with the global CLI preflight:
 
 ```bash
