@@ -672,6 +672,264 @@ archive manifest for local agent metadata and workspace state. Exclude
 dependency caches, and build outputs before upload unless a project-owned source
 file in one of those paths is explicitly required.
 
+## 4.6 Regional package-mirror scan (cross-language)
+
+OpenDeploy build infrastructure is currently US-region only. Repositories that
+hardcode a region-specific package mirror (most often China-region) will fail
+the build on `yarn install` / `pip install` / `apk add` / `apt-get` / `go mod
+download` / `mvn` / `bundle install` / `composer install` with either
+`ESOCKETTIMEDOUT`, repeated `network connection. Retrying...`, DNS failures, or
+TLS handshake timeouts. The plan must detect these references locally **before**
+upload and propose a removal as a `mutation` with explicit user consent. Apply
+the patch only after consent; never silently rewrite the user's source.
+
+Scan is generic across ecosystems. Do not encode a per-framework allowlist.
+
+### Files to scan
+
+Read these files when present and grep for the host list below:
+
+```
+Dockerfile, */Dockerfile, */*/Dockerfile, docker-compose.y?ml
+.npmrc, .yarnrc, .yarnrc.yml, package.json
+yarn.lock, pnpm-lock.yaml, package-lock.json, bun.lock
+requirements.txt, pyproject.toml, Pipfile, poetry.lock, uv.lock
+pip.conf, .pip/pip.conf
+pom.xml, build.gradle, build.gradle.kts, settings.gradle*, gradle.properties
+go.mod, go.sum
+Gemfile, Gemfile.lock
+Cargo.toml, Cargo.lock, .cargo/config.toml, .cargo/config
+composer.json, composer.lock
+```
+
+### Hostnames that indicate a CN-region mirror
+
+Treat any occurrence of these hosts as a regional-mirror hit. The list is the
+practical detection set, not an exhaustive denylist:
+
+```
+registry.npmmirror.com           # npm / yarn — China mirror
+registry.npm.taobao.org          # npm / yarn — legacy China mirror
+npm.taobao.org
+mirrors.aliyun.com               # apt/apk/pip/maven/composer/etc.
+mirrors.aliyuncs.com
+maven.aliyun.com
+pypi.tuna.tsinghua.edu.cn        # pip
+mirrors.tuna.tsinghua.edu.cn
+pypi.douban.com                  # pip — defunct but still seen in old repos
+pypi.doubanio.com
+mirrors.cloud.tencent.com        # apt/apk/pip
+mirrors.huaweicloud.com
+repo.huaweicloud.com             # maven
+mirrors.ustc.edu.cn
+goproxy.cn                       # go modules
+goproxy.io
+gems.ruby-china.com              # rubygems
+gems.ruby-china.org
+mirrors.bfsu.edu.cn
+mirrors.163.com
+```
+
+A practical single regex for grep:
+
+```
+registry\.npmmirror\.com|registry\.npm\.taobao\.org|npm\.taobao\.org|mirrors\.aliyun(cs)?\.com|maven\.aliyun\.com|pypi\.tuna\.tsinghua\.edu\.cn|mirrors\.tuna\.tsinghua\.edu\.cn|pypi\.douban(io)?\.com|mirrors\.cloud\.tencent\.com|mirrors\.huaweicloud\.com|repo\.huaweicloud\.com|mirrors\.ustc\.edu\.cn|goproxy\.(cn|io)|gems\.ruby-china\.(com|org)|mirrors\.bfsu\.edu\.cn|mirrors\.163\.com
+```
+
+Where these hits typically live and what to do with them:
+
+| Location | Hit shape | Proposed mutation |
+|---|---|---|
+| `Dockerfile` `RUN` line setting a registry/mirror (e.g. `RUN yarn config set registry '...'`, `RUN npm config set registry '...'`, `RUN pip config set global.index-url '...'`, `RUN go env -w GOPROXY=...`, `RUN sed -i 's/dl-cdn.alpinelinux.org/.../' /etc/apk/repositories`, `RUN sed ... /etc/apt/sources.list`) | full-line | delete the line |
+| `.npmrc` / `.yarnrc` / `.yarnrc.yml` | `registry=...` / `npmRegistryServer: ...` | delete the line; keep the file if other settings remain, else delete the file |
+| `yarn.lock` `resolved "https://<host>/..."` | per-package URL | rewrite host **and any vendor-specific npm path prefix** to `registry.yarnpkg.com` (lockfile integrity is sha512 of tarball, not URL — host swap is safe) |
+| `pnpm-lock.yaml` `resolution: { tarball: '...' }` / `resolved: '...'` | per-package URL | rewrite host (+ vendor prefix) to `registry.npmjs.org` |
+| `package-lock.json` `resolved` | per-package URL | rewrite host (+ vendor prefix) to `registry.npmjs.org` |
+| `requirements.txt` / `pip.conf` `--index-url` / `--extra-index-url` | line/value | delete or rewrite to `https://pypi.org/simple` |
+| `pyproject.toml` `[[tool.*.source]]` block pointing at a CN mirror | block | delete the block |
+| `pom.xml` / `settings.xml` `<mirror>` / `<repository>` pointing at a CN host | element | delete the element |
+| `go.mod` is not affected; `GOPROXY` Dockerfile ENV / `go env -w` | env/line | delete the line |
+| `Gemfile` `source "https://gems.ruby-china.com"` | line | rewrite host to `https://rubygems.org` |
+| `Cargo.toml` / `.cargo/config.toml` `[source.crates-io] replace-with = "ustc"` or similar | block | delete the override |
+| `composer.json` `repositories[]` pointing at a CN mirror | element | delete the element |
+
+`yarn.lock` integrity note: the `integrity:` field is a sha512 of the tarball
+contents, not of the URL, so swapping the host in `resolved` does **not** break
+`yarn install --frozen-lockfile`. The same is true for `pnpm-lock.yaml` and
+`package-lock.json`.
+
+### Two evidence-driven rules from real lockfiles
+
+Both came from NextChat (`ChatGPTNextWeb/NextChat`) lockfile failures on US
+build infrastructure. Bake them into the scan and rewrite — single-host sed and
+plain host-swap both miss real cases.
+
+**Rule 1 — Lockfiles can mix multiple CN mirrors in a single file.** Upstream
+maintainers' local yarn caches come from whichever mirror was fastest, and
+yarn freezes that URL into `resolved`. One observed NextChat `yarn.lock`:
+
+| host | `resolved` lines | covered by a single `npmmirror` sed? |
+|---|---|---|
+| `registry.npmmirror.com` | 390 | yes |
+| `mirrors.huaweicloud.com/repository/npm/` | 4 | **no — slipped through, build timed out on `caniuse-lite`** |
+
+The scan and the rewrite must therefore use the **full** host alternation, not
+a single host from the build log. A four-line straggler is enough to kill
+`yarn install --frozen-lockfile`.
+
+**Rule 2 — Path-prefixed mirrors require path-aware rewrite.** Some CN mirrors
+expose npm under a vendor path, not at the root:
+
+| host | vendor path | example `resolved` URL |
+|---|---|---|
+| `mirrors.huaweicloud.com` | `/repository/npm/` | `https://mirrors.huaweicloud.com/repository/npm/caniuse-lite/-/caniuse-lite-1.0.30001724.tgz` |
+| `mirrors.aliyun.com` / `mirrors.aliyuncs.com` | `/npm/` | `https://mirrors.aliyun.com/npm/@babel/code-frame/-/code-frame-7.18.6.tgz` |
+| `mirrors.cloud.tencent.com` | `/npm/` | `https://mirrors.cloud.tencent.com/npm/lodash/-/lodash-4.17.21.tgz` |
+
+Replacing only the host produces broken URLs:
+`https://mirrors.huaweicloud.com/repository/npm/caniuse-lite/...` →
+`https://registry.yarnpkg.com/repository/npm/caniuse-lite/...` → **404**.
+
+The rewrite must consume the vendor path **as part of the captured prefix** so
+the substitution restores the canonical npm path layout
+(`/<pkg>/-/<pkg>-<ver>.tgz`).
+
+### Emit into the plan
+
+Record findings under `analysis.regional_mirrors` and surface them through the
+plan as a single `mutation` with one `consent`:
+
+```json
+{
+  "regional_mirrors": {
+    "detected": true,
+    "target_region": "us-east-1",
+    "hits": [
+      {"path": "Dockerfile", "matches": 1, "action": "delete_line",
+       "evidence": "RUN yarn config set registry 'https://registry.npmmirror.com/'"},
+      {"path": "yarn.lock", "matches": 390, "action": "rewrite_host",
+       "from": "registry.npmmirror.com", "to": "registry.yarnpkg.com"}
+    ]
+  }
+}
+```
+
+Plan `mutations[]` entry:
+
+```json
+{
+  "kind": "regional_mirror_strip",
+  "consent": "regional_mirror_strip",
+  "summary": "Strip 2 file(s), 391 line-level reference(s) to CN-region mirrors that the target build region cannot reach.",
+  "files": [
+    {"path": "Dockerfile",  "action": "delete_line",   "matches": 1},
+    {"path": "yarn.lock",   "action": "rewrite_host",  "matches": 390,
+     "from": "registry.npmmirror.com", "to": "registry.yarnpkg.com"}
+  ]
+}
+```
+
+Plan `consents[]` entry:
+
+```json
+{
+  "id": "regional_mirror_strip",
+  "title": "Remove regional package-mirror references before upload?",
+  "body": "These files reference CN-region package mirrors. The US build cannot reach them and the build will time out without this patch. Lockfile integrity hashes are content hashes (sha512 of tarball), not URL hashes, so host swaps are safe under --frozen-lockfile.",
+  "recommended": "apply",
+  "options": [
+    "apply — perform the listed edits in place before zipping",
+    "skip_and_warn — proceed without edits, expect build to fail",
+    "cancel — do not deploy"
+  ]
+}
+```
+
+Default behavior:
+
+- `detected: false` → no mutation, no consent gate, continue.
+- `detected: true` + user picks `apply` → run the edits below, re-grep to verify
+  zero hits, then continue to packaging in section 5.
+- `detected: true` + user picks `skip_and_warn` → carry through as a `warnings[]`
+  entry (`"build is expected to fail: <host> unreachable from <region>; user
+  accepted risk"`); do not auto-retry on the resulting build failure.
+- `detected: true` + user picks `cancel` → exit before upload.
+
+### Apply edits (BSD/macOS- and Linux-compatible)
+
+Only run after `apply` consent. Use **two** regexes — one for detection /
+config-file line deletion, one for lockfile rewrites that includes vendor npm
+path prefixes (per Rule 2 above).
+
+```bash
+# Detection / config-file line-delete regex — bare hostnames only.
+HOST_REGEX='registry\.npmmirror\.com|registry\.npm\.taobao\.org|npm\.taobao\.org|mirrors\.aliyun(cs)?\.com|maven\.aliyun\.com|pypi\.tuna\.tsinghua\.edu\.cn|mirrors\.tuna\.tsinghua\.edu\.cn|pypi\.douban(io)?\.com|mirrors\.cloud\.tencent\.com|mirrors\.huaweicloud\.com|repo\.huaweicloud\.com|mirrors\.ustc\.edu\.cn|goproxy\.(cn|io)|gems\.ruby-china\.(com|org)|mirrors\.bfsu\.edu\.cn|mirrors\.163\.com'
+
+# Lockfile rewrite regex — host PLUS vendor npm path prefix where applicable.
+# Each alternative is consumed in full so the canonical npm path layout is
+# restored after substitution (per Rule 2).
+LOCK_REGEX='registry\.npmmirror\.com|registry\.npm\.taobao\.org|npm\.taobao\.org|mirrors\.aliyun(cs)?\.com/npm|mirrors\.huaweicloud\.com/repository/npm|mirrors\.cloud\.tencent\.com/npm|mirrors\.tuna\.tsinghua\.edu\.cn/npm|mirrors\.ustc\.edu\.cn/npm|mirrors\.bfsu\.edu\.cn/npm|mirrors\.163\.com/npm'
+
+# 1. Config files — delete any full line matching HOST_REGEX.
+for f in Dockerfile Dockerfile.* docker-compose.yml docker-compose.yaml \
+         .npmrc .yarnrc .yarnrc.yml \
+         requirements.txt pip.conf .pip/pip.conf pyproject.toml Pipfile \
+         pom.xml settings.xml build.gradle build.gradle.kts \
+         settings.gradle settings.gradle.kts gradle.properties \
+         Gemfile Cargo.toml .cargo/config .cargo/config.toml composer.json; do
+  [ -f "$f" ] || continue
+  sed -i.bak -E "/${HOST_REGEX}/d" "$f" && rm "$f.bak"
+done
+
+# 2. Lockfiles — rewrite vendor prefix to canonical npm registry.
+#    yarn.lock targets registry.yarnpkg.com (yarn 1.x convention);
+#    pnpm/npm/bun lockfiles target registry.npmjs.org.
+for f in yarn.lock; do
+  [ -f "$f" ] || continue
+  sed -i.bak -E "s|https?://(${LOCK_REGEX})|https://registry.yarnpkg.com|g" "$f" && rm "$f.bak"
+done
+for f in pnpm-lock.yaml package-lock.json bun.lock; do
+  [ -f "$f" ] || continue
+  sed -i.bak -E "s|https?://(${LOCK_REGEX})|https://registry.npmjs.org|g" "$f" && rm "$f.bak"
+done
+```
+
+Then verify with the **bare** `HOST_REGEX` across every scanned file. A zero-hit
+result is the only acceptable outcome — a single straggler (the
+huaweicloud/4-line case above) is enough to kill the build:
+
+```bash
+HITS=$(grep -RInE "${HOST_REGEX}" \
+  Dockerfile* docker-compose* .npmrc .yarnrc* package.json \
+  yarn.lock pnpm-lock.yaml package-lock.json bun.lock \
+  requirements.txt pyproject.toml Pipfile pip.conf \
+  pom.xml build.gradle* settings.gradle* gradle.properties \
+  Gemfile Cargo.toml .cargo/config* composer.json \
+  2>/dev/null)
+if [ -n "$HITS" ]; then
+  printf 'regional_mirror_strip incomplete:\n%s\n' "$HITS"
+  exit 1
+fi
+echo "ok: no regional mirror reference"
+```
+
+If verification fails, stop and report the matches to the user. Do not proceed
+to upload, and do not "fix it again" by adding the remaining host to the regex
+locally — update the regex in this skill instead and re-run the scan.
+
+Hard rules:
+
+- Never apply this mutation without explicit consent. The user's source is
+  evidence of intent; auto-rewriting it is destructive even when the rewrite
+  is mechanically safe.
+- Never echo file contents or full lockfile diffs back to the user as the
+  consent payload. Show file-level summary only: `path`, `action`, `matches`.
+- Never add new files (`.npmrc`, `.yarnrc.yml`, etc.) as part of this patch.
+  The mutation only removes/rewrites existing references.
+- Do not generalize this rule to "any non-default registry." Private/corporate
+  registries (e.g. `<company>.jfrog.io`, GitHub Packages, Verdaccio) are not on
+  the host list and must not be touched.
+
 ## 5. Package the source for upload (Step 4)
 
 **Format: ZIP only.** The backend (`project-service/internal/handlers/upload.go`) uses `archive/zip` exclusively; tar / tar.gz is rejected at extraction. Keep `source_path` per service so Step 4 can zip the right subfolder for monorepos.

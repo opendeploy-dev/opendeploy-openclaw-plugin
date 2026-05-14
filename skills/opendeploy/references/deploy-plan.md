@@ -128,6 +128,13 @@ Plan must inspect:
   under `set -u` / nounset. Optional build args should have safe Dockerfile
   defaults before cloud mutation; empty build variables may be dropped before
   BuildKit.
+- regional package-mirror references (CN-region npm/yarn/pip/maven/apt/apk/go/
+  rubygems/cargo/composer hosts) that the target build region cannot reach.
+  See `references/analyze-local.md` section 4.6 for the host list, file scan,
+  proposed mutation shape, and apply commands. Detection is generic across
+  ecosystems; do not encode a per-framework allowlist. When found, surface a
+  single `regional_mirror_strip` consent before upload; recommended option is
+  `apply`. Never silently rewrite the user's source.
 - dependency env outputs whose secret values are placeholders such as
   `changeme`, `password`, or `secret`
 - whether placeholder dependency keys are actually consumed by the app or are
@@ -288,6 +295,12 @@ call it a self-review or plan review.
   example a project-owned `build/` directory or a credential-free `.npmrc`
 - `docker-compose depends_on` not mapped to dependency
 - dependency hostname namespace suffix mismatch
+- regional package-mirror references left in source (CN-region npm/pip/maven/
+  apt/go/etc. hosts) that the target build region cannot reach. If
+  `analysis.regional_mirrors.detected` is `true`, the plan must carry a
+  `regional_mirror_strip` mutation and consent. Otherwise the build will
+  time out on `yarn install` / `pip install` / `apk add` / `apt-get` with
+  `ESOCKETTIMEDOUT` or repeated `network connection. Retrying...`.
 
 Proceed only when `blocking_issues` is empty.
 
@@ -354,6 +367,7 @@ create service
 read back service env
 assert required DB env exists
 assert runtime/build env maps are not accidentally mirrored
+apply approved source mutations (e.g. regional_mirror_strip) — see analyze-local.md §4.6
 verify source archive manifest
 upload source
 create deployment
