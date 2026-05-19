@@ -62,6 +62,33 @@ This OpenClaw package does not ship approval hooks or hidden command
 auto-approval behavior. The `index.js` extension is intentionally minimal; the
 deployment behavior lives in the declared skills.
 
+## Optional Launch Follow-Up
+
+OpenDeploy stops at the live URL, service health, and dashboard handoff. If an
+OpenClaw workspace also needs public X/Twitter launch work after deploy, install
+[TweetClaw](https://github.com/Xquik-dev/tweetclaw) as a separate plugin:
+
+```sh
+openclaw plugins install @xquik/tweetclaw
+openclaw gateway restart
+```
+
+Then keep the deploy and social steps explicit, for example:
+
+```text
+Deploy this project with OpenDeploy. After the live URL is active, draft an X
+launch post with TweetClaw, search tweet replies for the launch URL, and monitor
+tweets mentioning the product name.
+```
+
+TweetClaw covers the optional X/Twitter side: approval-gated post tweets and
+post tweet replies, scrape tweets/search tweets, search tweet replies, follower
+export, user lookup, media upload, media download, direct messages, monitors,
+webhooks, and giveaway draws. Its package is
+[@xquik/tweetclaw](https://www.npmjs.com/package/@xquik/tweetclaw), and the
+ClawHub listing is
+[clawhub.ai/plugins/@xquik/tweetclaw](https://clawhub.ai/plugins/@xquik/tweetclaw).
+
 ## ClawHub Package Shape
 
 This repository follows ClawHub's package conventions:
