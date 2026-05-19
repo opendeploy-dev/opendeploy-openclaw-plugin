@@ -1,6 +1,6 @@
 {
   "name": "opendeploydev",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "OpenDeploy skills packaged as a native OpenClaw plugin for ClawHub.",
   "type": "module",
   "license": "MIT",

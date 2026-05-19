@@ -376,6 +376,12 @@ If build logs are needed and the CLI supports it:
 opendeploy deployments build-logs "$DEPLOYMENT_ID" --json
 ```
 
+Before any retry, pause, or terminal failure report, open
+`references/deploy-attempt-record.md` and update the local attempt record with
+deployment status, redacted log excerpt, stable `error_category`, root cause,
+and the next action. Append the compact JSONL line too. This turns failed
+deploys into reusable evidence instead of one-off chat history.
+
 Retry budget:
 
 - One automatic retry is allowed only after a concrete read-back verified
@@ -431,6 +437,7 @@ When you contact us, please paste:
 - **Service ID:** `<SERVICE_ID>`
 - **Deployment ID:** `<DEPLOYMENT_ID>`
 - **Status:** `<STATUS>`
+- **Attempt record:** `<ATTEMPT_RECORD_PATH>`
 ```
 
 ## Step 9 - Final report
@@ -456,6 +463,11 @@ deployment report includes `project_id`, `service_id`, `deployment_id`, and
 `live_url`. If `context_save.saved` is false, run `opendeploy context save`
 with the report fields before finishing so future `/opendeploy` calls do not
 create duplicates or show `Deployment ID: none`.
+
+Before printing any Branch A/B success report, update the deploy-attempt record
+with `final.status`, live URL, dashboard/bind URL, deployment id, and remaining
+caveats. If this was a retry, add a `fixes[]` entry describing the change and
+redeploy result.
 
 ### Step 9.1 — DB-backed framework smoke test (mandatory for django/rails/laravel/phoenix/prisma/drizzle/alembic)
 
@@ -509,6 +521,9 @@ required migration env alias is missing.
 
 Do **not** auto-edit the Dockerfile. Surface the half-success report and ask
 the user before any source mutation.
+Record this as `migration_missing` (or the closest stable category from
+`references/deploy-attempt-record.md`) in the deploy-attempt record before
+asking for the next action.
 
 ### Branch A - unbound local deploy credential
 

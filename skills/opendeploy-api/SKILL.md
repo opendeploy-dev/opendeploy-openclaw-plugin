@@ -1,6 +1,6 @@
 ---
 name: opendeploy-api
-version: "0.0.1"
+version: "0.0.2"
 description: "Safe OpenDeploy API escape hatch for advanced agents when the CLI lacks a route. Use only when the user says raw API, OpenDeploy API, CLI lacks route, missing CLI command, advanced API, API escape hatch, GET route, POST route, PUT route, PATCH route, or a needed OpenDeploy operation is not exposed by the CLI. DELETE remains blocked."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

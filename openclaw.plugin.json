@@ -2,7 +2,7 @@
   "id": "opendeploydev",
   "name": "OpenDeploy",
   "description": "Deploy and operate apps with OpenDeploy from OpenClaw through the official @opendeploydev/cli.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "enabledByDefault": true,
   "skills": [
     "./skills/opendeploy",

@@ -58,7 +58,7 @@ that record and fetches the newer ClawHub package. Do not use
 `openclaw skills update` for this package-level update; that command is for
 standalone workspace skills. After the update command finishes, run `openclaw gateway restart`; the CLI
 prints `Restart the gateway to load plugins and hooks`. If the package version
-is unchanged, OpenClaw may also print `opendeploydev already at 0.0.1`; treat
+is unchanged, OpenClaw may also print `opendeploydev already at the current version`; treat
 that as a version-status line, not a deploy blocker. If the running OpenClaw
 agent still does not see the new skill text after gateway restart, start a new
 agent session.
@@ -271,6 +271,33 @@ returned `REDIS_URL` / `REDIS_*` values. Do not use Redis
 `update-connection` to recover a first-deploy auth failure; if Redis runtime
 logs report `invalid username-password pair` or `user is disabled` after a
 rotation, stop and ask for dependency recreation or OpenDeploy support.
+
+For temporary external DB/cache inspection without redeploying the app:
+
+```bash
+opendeploy dependencies port-access enable "$PROJECT_ID" "$PROJECT_DEPENDENCY_ID" \
+  --confirm-security-sensitive --json
+opendeploy dependencies port-access status "$PROJECT_ID" "$PROJECT_DEPENDENCY_ID" --json
+
+# Run the smallest read-only local client query needed, keeping credentials in
+# 0600 temp files and out of argv/chat.
+
+opendeploy dependencies port-access disable "$PROJECT_ID" "$PROJECT_DEPENDENCY_ID" --json
+```
+
+On older CLIs, use the same backend routes through `opendeploy api post|get`:
+
+```bash
+opendeploy api post "/projects/$PROJECT_ID/dependencies/$PROJECT_DEPENDENCY_ID/port-access/enable" \
+  --confirm-security-sensitive --json
+opendeploy api get "/projects/$PROJECT_ID/dependencies/$PROJECT_DEPENDENCY_ID/port-access" --json
+opendeploy api post "/projects/$PROJECT_ID/dependencies/$PROJECT_DEPENDENCY_ID/port-access/disable" --json
+```
+
+The enable route is security-sensitive because it opens a managed dependency on
+an external TCP port. Always disable it after the query. Prefer this path over
+adding a temporary app debug endpoint, because it requires no source edit and no
+redeploy.
 
 5. Merge dependency env vars plus approved user `.env` values into the service
 body. Keep real values out of stdout. Use the smallest schema-valid body for

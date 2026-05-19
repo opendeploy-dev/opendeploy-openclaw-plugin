@@ -1,6 +1,6 @@
 ---
 name: opendeploy-auth
-version: "0.0.1"
+version: "0.0.2"
 description: "Manage OpenDeploy authentication. Use when the user says login, log in, sign in, auth, auth status, whoami, token, OpenDeploy token, dashboard token, local deploy credential, guest credential, anonymous credential, bind account, account binding link, credential rejected, 401, or asks to inspect credential binding state."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

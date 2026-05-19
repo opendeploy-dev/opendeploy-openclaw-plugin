@@ -1,6 +1,6 @@
 ---
 name: opendeploy-alarms
-version: "0.0.1"
+version: "0.0.2"
 description: "Manage OpenDeploy alarm lifecycle from an agent. Use for active alarms, alert history, alarm notes, acknowledging, resolving, suppressing, alarm-backed legacy support engagement, and human-visible dashboard updates. Use opendeploy-oncall for Discord oncall setup, direct support channel handoff when no alarm exists, and per-alarm conversation with OpenDeploy responders."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

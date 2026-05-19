@@ -1,7 +1,7 @@
 ---
 name: opendeploy-database
-version: "0.0.1"
-description: "Plan, create, wait for, analyze, diagnose, or rotate credentials on OpenDeploy managed Postgres, MySQL, MongoDB, and Redis dependencies. Use when the user says database, db, cache, Postgres, PostgreSQL, MySQL, MongoDB, Mongo, Redis, connection string, DATABASE_URL, REDIS_URL, MONGODB_URI, dependency health, dependency env, create DB, add Redis, debug managed dependency env injection, rotate database password, change DB password, reset DB credentials, or update database username."
+version: "0.0.2"
+description: "Plan, create, wait for, analyze, diagnose, query/inspect, temporarily expose, or rotate credentials on OpenDeploy managed Postgres, MySQL, MongoDB, and Redis dependencies. Use when the user says database, db, cache, Postgres, PostgreSQL, MySQL, MongoDB, Mongo, Redis, connection string, DATABASE_URL, REDIS_URL, MONGODB_URI, dependency health, dependency env, create DB, add Redis, debug managed dependency env injection, check a table, count users, inspect DB data, rotate database password, change DB password, reset DB credentials, or update database username."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}
 ---
@@ -71,6 +71,7 @@ opendeploy dependencies env <project-id> --json                      # injected 
 opendeploy dependencies status <project-id> --json                   # raw status + env vars
 opendeploy dependencies preview-env-vars --project <project-id> --json
 opendeploy dependencies update-connection <project-id> <project-dependency-id> --body db-credentials.json --json
+opendeploy dependencies port-access status <project-id> <project-dependency-id> --json
 ```
 
 For multi-dependency setup, use `dependencies batch-create`.
@@ -140,6 +141,64 @@ After credential rotation, patch/reconcile every consuming service runtime env
 from the updated dependency env and create new deployments for those services.
 Updating the dependency alone does not make already-running app containers see
 the new password.
+
+## Inspect / query a managed DB without redeploying
+
+When the user asks to inspect database state (for example "are there users?",
+"count rows", "check this table", "does this migration exist?"), do **not**
+recommend a temporary app debug endpoint or source edit first. That requires a
+redeploy and leaves risky application code behind. Prefer the platform DB access
+path:
+
+1. Confirm the target dependency and table/query from context.
+2. Ask explicit consent to temporarily expose the managed dependency TCP port
+   and reveal credentials to the local agent process. This is
+   `security_sensitive` consent.
+3. Enable external TCP access:
+
+   ```bash
+   opendeploy dependencies port-access enable <project-id> <project-dependency-id> \
+     --confirm-security-sensitive --json
+   ```
+
+   If the installed CLI does not have `dependencies port-access`, use the API
+   escape hatch:
+
+   ```bash
+   opendeploy api post /projects/<project-id>/dependencies/<project-dependency-id>/port-access/enable \
+     --confirm-security-sensitive --json
+   ```
+
+4. Read credentials with explicit secret-reveal consent and keep them in a
+   `0600` temp file. Do not print them. Prefer connection files/env accepted by
+   the DB client over password-in-argv.
+5. Run the smallest read-only query needed. Examples:
+
+   - Postgres: `psql` with `PGPASSFILE=.opendeploy/.pgpass`.
+   - MySQL/MariaDB-compatible: `mysql` with a temporary defaults file.
+   - MongoDB: `mongosh` with the URI in a temporary file/env var.
+   - Redis: `redis-cli` with credentials kept out of chat/output.
+
+6. Immediately disable external TCP access, even if the query fails:
+
+   ```bash
+   opendeploy dependencies port-access disable <project-id> <project-dependency-id> --json
+   ```
+
+   API fallback:
+
+   ```bash
+   opendeploy api post /projects/<project-id>/dependencies/<project-dependency-id>/port-access/disable --json
+   ```
+
+7. Delete local temp credential files and report only redacted results.
+
+The current backend port-access route is persistent until disabled; treat the
+disable step as mandatory cleanup, not optional housekeeping. If disable fails,
+surface the project/dependency IDs and ask OpenDeploy support to close the
+mapping. Only use a temporary application debug endpoint + redeploy as a last
+resort when dependency port access and service exec are both unavailable, and
+only after explicit source-edit approval.
 
 ## Analyze
 

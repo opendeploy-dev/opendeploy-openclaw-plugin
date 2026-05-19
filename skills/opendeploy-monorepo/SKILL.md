@@ -1,6 +1,6 @@
 ---
 name: opendeploy-monorepo
-version: "0.0.1"
+version: "0.0.2"
 description: "Plan OpenDeploy service splits for monorepos, workspaces, docker-compose apps, web+worker apps, cron jobs, and multi-service projects. Use when the user says monorepo, workspace, pnpm workspace, turborepo, nx, multiple apps, multiple services, worker, queue, cron, docker-compose, compose, Procfile, web/API split, root directory, app directory, service split, or when OpenDeploy analysis detects more than one candidate service."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

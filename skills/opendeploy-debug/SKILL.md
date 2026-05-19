@@ -1,6 +1,6 @@
 ---
 name: opendeploy-debug
-version: "0.0.1"
+version: "0.0.2"
 description: "Single OpenDeploy debugging entrypoint for failed or unreachable deployments. Use when the user says logs, show logs, build logs, runtime logs, failed deployment, why failed, diagnose deploy, debug deployment, 502, bad gateway, connection refused, dial tcp timeout, CrashLoopBackOff, build failure, runtime crash, port mismatch, wrong port, Docker EXPOSE mismatch, DB not ready, Redis not ready, startup order, readiness, dependency DNS, DATABASE_URL missing, REDIS_URL missing, dependency env missing, or service starts before managed DB/cache is ready."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}
@@ -37,7 +37,9 @@ then hand off to the narrow mutation skill only after there is a concrete cause.
 5. Compare service config, runtime env, exposed port, and log evidence.
 6. Check managed dependency status and injected env keys when DB/cache is in the
    app, plan, or error logs.
-7. Classify the issue and choose the next action.
+7. Classify the issue with the stable category keys below, update the local
+   deploy-attempt record when a worktree/context exists, then choose the next
+   action.
 
 ## Baseline Evidence
 
@@ -67,13 +69,28 @@ opendeploy logs diagnose <deployment-id> --json
 
 | Evidence | Classification | Next action |
 |---|---|---|
-| Build phase failed, package install error, missing build command, or compiler error | build failure | Summarize build log evidence; use `opendeploy-config` only if config is wrong, otherwise ask before app-code edits |
-| Service is running but proxy returns 502, connection refused, wrong listener, Docker `EXPOSE` disagreement, or runtime listens on a different port | port mismatch | Load `references/port.md`; patch through `opendeploy-config` only with evidence |
-| DB/cache status is not running, service env lacks dependency keys, DNS hostname has wrong namespace, or logs show dependency connection refused | dependency readiness/env issue | Load `references/startup-order.md`; use `opendeploy-database` or `opendeploy-env` for resource/env fixes |
-| Runtime logs show missing env key unrelated to managed dependency | missing env | Use `opendeploy-env`; show key names only |
-| Service is active, health path is 200, but a primary app endpoint returns 5xx and logs mention missing DB tables, unapplied migrations, migration files, or ORM relation errors | migration/bootstrap missing | Patch the service start command or use the platform one-off command when available, then redeploy/restart once with consent |
-| Gateway status is ok but a downstream breaker is open, dependency hostname namespace is impossible, or logs are unavailable despite valid IDs | platform/backend issue | Use `opendeploy-ops` for health; report IDs and evidence |
+| Build phase failed, package install error, missing build command, or compiler error | `build_command` | Summarize build log evidence; use `opendeploy-config` only if config is wrong, otherwise ask before app-code edits |
+| Service is running but proxy returns 502, connection refused, wrong listener, Docker `EXPOSE` disagreement, or runtime listens on a different port | `port_mismatch` | Load `references/port.md`; patch through `opendeploy-config` only with evidence |
+| DB/cache status is not running, service env lacks dependency keys, DNS hostname has wrong namespace, or logs show dependency connection refused | `dependency_env` | Load `references/startup-order.md`; use `opendeploy-database` or `opendeploy-env` for resource/env fixes |
+| Runtime logs show missing env key unrelated to managed dependency | `missing_env` | Use `opendeploy-env`; show key names only |
+| Service is active, health path is 200, but a primary app endpoint returns 5xx and logs mention missing DB tables, unapplied migrations, migration files, or ORM relation errors | `migration_missing` | Patch the service start command or use the platform one-off command when available, then redeploy/restart once with consent |
+| User asks to inspect DB data/table state and the DB is an OpenDeploy managed dependency | `unknown` unless this explains a deploy failure | Hand off to `opendeploy-database` and use temporary dependency port access/query. Do not recommend adding an app debug endpoint or redeploy unless DB port access and exec are unavailable and the user approves a source edit |
+| Gateway status is ok but a downstream breaker is open, dependency hostname namespace is impossible, or logs are unavailable despite valid IDs | `platform_backend` | Use `opendeploy-ops` for health; report IDs and evidence |
 | Evidence is incomplete or contradictory | unknown | Stop and report collected evidence plus the missing signal |
+
+For categories not represented in this short table, load
+`../opendeploy/references/deploy-attempt-record.md` and choose the closest
+stable category (`analysis_miss`, `source_archive`, `quota`, `edge_ingress`,
+`service_mapping`, etc.). Do not invent project-specific category names.
+
+## Deploy Attempt Record
+
+When debugging from a local worktree or resolvable `.opendeploy` context, update
+the latest `.opendeploy/attempts/...json` record before any retry, handoff, or
+terminal report. If no record exists, create a minimal one using
+`../opendeploy/references/deploy-attempt-record.md`. Store deployment IDs,
+service IDs, status, redacted log excerpts, `error_category`, root cause,
+planned fix, and redeploy result. Store env key names only.
 
 ## Hard Rules
 
@@ -96,3 +113,4 @@ opendeploy logs diagnose <deployment-id> --json
 - `references/logs.md` - log collection and generic triage.
 - `references/port.md` - port mismatch checks and fixes.
 - `references/startup-order.md` - managed DB/cache readiness and env injection.
+- `../opendeploy/references/deploy-attempt-record.md` - local attempt record schema, stable error categories, and redaction rules.

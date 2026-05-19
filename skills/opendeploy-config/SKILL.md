@@ -1,6 +1,6 @@
 ---
 name: opendeploy-config
-version: "0.0.1"
+version: "0.0.2"
 description: "Inspect or patch OpenDeploy service config such as build command, start command, root directory, Dockerfile path, builder, port, resources, healthcheck, and monorepo settings. Use when the user says build command, start command, root directory, app directory, Dockerfile, builder, auto-builder, health check, resources, memory, CPU, port config, monorepo config, or auto-detection picked the wrong build/start/root/port."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

@@ -1,6 +1,6 @@
 ---
 name: opendeploy-context
-version: "0.0.1"
+version: "0.0.2"
 description: "Resolve, save, or inspect OpenDeploy project/service/deployment context. Use when the user says existing project, saved IDs, project id, service id, deployment id, same service, same project, resume deploy, redeploy same service, avoid duplicate project, what project is this, or asks whether the current directory already has OpenDeploy context."
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node","npm"]},"install":[{"kind":"node","package":"@opendeploydev/cli","bins":["opendeploy"]}],"envVars":[{"name":"OPENDEPLOY_TOKEN","required":false,"description":"Optional OpenDeploy API token. If omitted, the skill creates or reuses a local deploy credential after user consent."},{"name":"OPENDEPLOY_BASE_URL","required":false,"description":"Optional OpenDeploy API base URL for development."}],"homepage":"https://opendeploy.dev"}}

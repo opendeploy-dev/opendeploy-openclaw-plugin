@@ -77,6 +77,7 @@ Match the symptom, run the inspection, apply the action. Do not retry silently -
 - **Never auto-retry on 403** (quota/subscription). It doesn't resolve itself.
 - **Never delete a project to "clean up"** on failure unless the user explicitly asks. Failed state is diagnostic; scrubbing it loses evidence.
 - **Never continue to Step 8 if Step 7 ended in `failed`** - a domain bound to a dead deployment is worse than no domain.
+- **Always update the deploy-attempt record before retrying or stopping.** Use `references/deploy-attempt-record.md`, pick a stable `error_category`, store redacted log evidence, root cause, fix applied/planned, and terminal result. Do not invent project-specific categories.
 - **Always print the Contact block (below) on terminal failure.** Every reference that can end in a `failed` / `cancelled` / `rolled_back` / unrecoverable state (deploy.md Step 7, setup.md DB provisioning, domain.md Step 9.5) must surface this block verbatim, with the listed identifiers filled in. If the user explicitly asked to engage OpenDeploy support, get a private Discord URL first with `opendeploy oncall status --json`; if no channel exists, run `opendeploy oncall setup --json` and use `authorize_url`. Discord URLs must be clickable Markdown links, not code blocks or inline code. Do not paraphrase the labels, do not drop fields, do not add emojis — the format is the contract.
 
 ---
@@ -107,9 +108,13 @@ straight to your deployment:
 - **Deployment ID:** `<DEPLOYMENT_ID>`
 - **Status:** `<STATUS>`
 - **Log file:** `<OD_LOG_FILE>`
+- **Attempt record:** `<ATTEMPT_RECORD_PATH>`
 ```
 
 `<OD_LOG_FILE>` is the absolute path to today's audit log (e.g. `~/.opendeploy/logs/2026-04-28.log`). The user may attach the file or grep it for the deployment id (`jq -c --arg d "<DEPLOYMENT_ID>" 'select(.deployment_id==$d)' <OD_LOG_FILE>`); secrets are guaranteed not to be in there.
+`<ATTEMPT_RECORD_PATH>` is the local `.opendeploy/attempts/...json` record
+created by `references/deploy-attempt-record.md`; write `n/a` only when the
+skill could not create one.
 
 Do **not** print the contact block on transient retryable errors (a single 5xx that resolves on retry, a 429 with `Retry-After`, an in-progress `building` state). Print it only when the skill has stopped trying.
 
